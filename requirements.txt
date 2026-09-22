@@ -1,0 +1,12 @@
+# Python >= 3.12 (lerobot). CPU-only torch: install it first from the CPU
+# index so no CUDA wheel is pulled:
+#   pip install torch==2.11.0 --index-url https://download.pytorch.org/whl/cpu
+# Versions are the ones every number in the README was measured on.
+so-arm100-sim[lerobot] @ git+https://github.com/AungKaung1928/so-arm100-sim.git@v0.1.0
+torch==2.11.0
+numpy==2.2.6
+lerobot[smolvla,dataset]==0.6.1
+sentence-transformers==6.1.0
+transformers==5.5.4
+mujoco==3.13.0
+pytest

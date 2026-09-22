@@ -1,0 +1,23 @@
+{
+  "shape": {
+    "hidden": 576,
+    "layers": 30,
+    "heads": 9,
+    "mlp": 1536,
+    "vocab": 49152
+  },
+  "rank": 8,
+  "seq": 256,
+  "threads": 8,
+  "params_total": 176685696,
+  "params_trainable": 552960,
+  "wrapped": 60,
+  "step_s": [
+    0.5085282350009948,
+    0.5142092730002332
+  ],
+  "step_s_best": 0.5085282350009948,
+  "gate_s": 5.0,
+  "verdict": "GO",
+  "date": "2026-09-22 09:15"
+}

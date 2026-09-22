@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "so-arm100-vla"
+version = "0.1.0"
+description = "A small language-conditioned multitask policy for the SO-ARM100 tabletop tasks, trained from scratch on scripted demonstrations"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.12"
+dependencies = [
+    "so-arm100-sim[lerobot] @ git+https://github.com/AungKaung1928/so-arm100-sim.git@v0.1.0",
+    "torch>=2.6",
+    "numpy>=1.26",
+]
+
+[project.optional-dependencies]
+minilm = ["sentence-transformers>=3.0"]
+smolvla = ["lerobot[smolvla,dataset]>=0.6"]
+dev = ["pytest>=8"]
+
+[tool.setuptools]
+packages = ["so_arm100_vla"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
