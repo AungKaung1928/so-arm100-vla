@@ -168,7 +168,7 @@ Model size at the default configuration: printed by `train.py`
 
 ```
 python3 -m venv .venv && . .venv/bin/activate          # Python >= 3.12
-pip install torch==2.11.0 --index-url https://download.pytorch.org/whl/cpu
+pip install torch==2.11.0 torchvision==0.26.0 --index-url https://download.pytorch.org/whl/cpu
 pip install -r requirements.txt && pip install -e .
 ./verify.sh                                            # tests, then the commands below
 python record_data.py --root data/multitask --episodes 20

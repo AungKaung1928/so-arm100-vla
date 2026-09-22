@@ -20,7 +20,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libegl1 libgl1 libosmesa6 ffmpeg
       - name: install (CPU torch first, so no CUDA wheel is resolved)
         run: |
-          pip install torch==2.11.0 --index-url https://download.pytorch.org/whl/cpu
+          pip install torch==2.11.0 torchvision==0.26.0 --index-url https://download.pytorch.org/whl/cpu
           pip install -r requirements.txt
       - name: tests (MiniLM download excluded; the runner may be offline)
         run: python -m pytest tests -q --deselect tests/test_text.py::test_minilm_encoder_and_cache
