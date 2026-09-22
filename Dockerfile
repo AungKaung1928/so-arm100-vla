@@ -10,10 +10,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends git && rm -rf /
 
 WORKDIR /app
 COPY pyproject.toml README.md LICENSE requirements.txt ./
-RUN pip install --no-cache-dir torch==2.11.0 --index-url https://download.pytorch.org/whl/cpu \
+RUN pip install --no-cache-dir torch==2.11.0 --index-url https://download.pytorch.org/whl/cpu --extra-index-url https://pypi.org/simple \
  && pip install --no-cache-dir -r requirements.txt
 COPY so_arm100_vla ./so_arm100_vla
 COPY tests ./tests
 COPY train.py eval_language.py record_data.py smolvla_reference.py lora_gate.py verify.sh ./
 
-CMD ["python", "-m", "pytest", "tests", "-q", "--deselect", "tests/test_text.py::test_minilm_encoder_and_cache"]
+# pyproject already passes -q; a second one here would suppress the summary line,
+# and the summary is the only thing the image is run for.
+CMD ["python", "-m", "pytest", "tests", "--deselect", "tests/test_text.py::test_minilm_encoder_and_cache"]

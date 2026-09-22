@@ -12,6 +12,8 @@ templates this repository holds out.
 marked `TODO(measure)` is produced by the named command and filled in from
 its JSON, never typed in.
 
+**Walkthrough:** https://aungkaung1928.github.io/projects/so-arm100.html — the bench and the three policy projects built on it, explained end to end.
+
 ## What this is, and what it is not
 
 It **is**: a 128-wide transformer over three tokens (a frozen sentence
@@ -185,6 +187,8 @@ another process, and the load average says which.
 ```
 docker build -t so-arm100-vla . && docker run --rm so-arm100-vla   # offline tests
 ```
+
+Image built on 2026-09-23 and its default command passed inside it (21 tests passed, 2 skipped, the one that downloads a text encoder deselected), image size 3.13 GB.
 
 ## Limits, stated
 
