@@ -103,8 +103,9 @@ class StubPolicy:
 
 
 class SmolVLARunner:
-    def __init__(self, policy, sentences, seed=0, home=None, log_time=None):
+    def __init__(self, policy, sentences, seed=0, home=None, log_time=None, tokenizer=None):
         self.policy = policy
+        self.tokenizer = tokenizer
         self.sentences = list(sentences)
         self.rng = np.random.default_rng(seed)
         self.resize = getattr(policy.config, "resize_imgs_with_padding", (512, 512))
@@ -120,10 +121,25 @@ class SmolVLARunner:
     def act(self, obs):
         import torch
         batch = build_batch(obs, self.sentence, self.features, self.resize)
+        if self.tokenizer is not None:
+            # select_action no longer tokenizes; lerobot's preprocessor pipeline did
+            # (newline-terminated task, right padding, max 48 tokens). Same steps here.
+            cfg = self.policy.config
+            tok = self.tokenizer([t if t.endswith("\n") else t + "\n" for t in batch["task"]],
+                                 padding=cfg.pad_language_to, padding_side="right",
+                                 max_length=cfg.tokenizer_max_length, truncation=True,
+                                 return_tensors="pt")
+            batch["observation.language.tokens"] = tok["input_ids"]
+            batch["observation.language.attention_mask"] = tok["attention_mask"].bool()
+        # SmolVLA predicts a 50-step chunk and pops one action per call, so only the
+        # calls that find the queue empty run the network. Time those, not the pops.
+        q = getattr(self.policy, "_queues", {}).get("action")
+        computes = q is None or len(q) == 0
         t0 = time.perf_counter()
         with torch.no_grad():
             a = self.policy.select_action(batch)
-        self.times.append(time.perf_counter() - t0)
+        if computes:
+            self.times.append(time.perf_counter() - t0)
         a = np.asarray(a).reshape(-1)[:6].astype(np.float64)
         # The model emits targets in its training units; absolute radians here.
         # A zero output holds the home pose, which is the only safe default.
@@ -134,7 +150,8 @@ def load_policy():
     from lerobot.policies.smolvla.modeling_smolvla import SmolVLAPolicy
     policy = SmolVLAPolicy.from_pretrained(REPO)
     policy.eval()
-    return policy
+    from transformers import AutoTokenizer
+    return policy, AutoTokenizer.from_pretrained(policy.config.vlm_model_name)
 
 
 def main():
@@ -149,12 +166,13 @@ def main():
     a = ap.parse_args()
     if not (a.dry_run or a.run):
         raise SystemExit("pass --dry-run (no download) or --run (downloads ~1 GB)")
-    policy = StubPolicy() if a.dry_run else load_policy()
+    policy, tokenizer = (StubPolicy(), None) if a.dry_run else load_policy()
     times, cells = [], {}
     for task in a.tasks:
         sents = S.sentences_for("seen", task, a.color) if (task, a.color) in I.TRAIN_COMBOS \
             else I.instructions(task, a.color, "train")
-        r = evaluate(lambda env, _s=sents: SmolVLARunner(policy, _s, log_time=times),
+        r = evaluate(lambda env, _s=sents: SmolVLARunner(policy, _s, log_time=times,
+                                                            tokenizer=tokenizer),
                      f"{task}:{a.color}:distractors", n_episodes=a.episodes,
                      seeds=tuple(range(a.seeds)),
                      env_kwargs={"obs_mode": "proprio", "action_mode": "absolute",
@@ -167,7 +185,7 @@ def main():
            "n_forward": len(times), **provenance()}
     write_json(a.out if a.run else a.out.replace(".json", "_dryrun.json"), out)
     if times:
-        print(f"forward pass p50 {out['forward_s_p50']:.3f} s, p90 {out['forward_s_p90']:.3f} s "
+        print(f"chunk inference p50 {out['forward_s_p50']:.3f} s, p90 {out['forward_s_p90']:.3f} s "
               f"over {len(times)} calls")
 
 

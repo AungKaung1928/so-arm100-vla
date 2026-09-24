@@ -1,0 +1,343 @@
+{
+  "split": "paraphrase",
+  "templates": "heldout",
+  "n_episodes": 20,
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "physics": "nominal",
+  "success_rate": 0.10999999999999999,
+  "success_std_mean": 0.0555716311477428,
+  "by_task": {
+    "reach": 0.2766666666666666,
+    "push": 0.04000000000000001,
+    "lift": 0.035,
+    "pick_place": 0.005
+  },
+  "cells": {
+    "reach:red": {
+      "task": "reach:red:distractors",
+      "physics": "nominal",
+      "dr": null,
+      "n_episodes": 20,
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "success_rate": 0.32999999999999996,
+      "success_std": 0.1604680653588121,
+      "per_seed": [
+        0.6,
+        0.35,
+        0.2,
+        0.25,
+        0.25
+      ],
+      "return_mean": -6.369913846234635,
+      "steps_mean": 82.24,
+      "first_success_p50": 45.0,
+      "first_success_p90": 79.8,
+      "wall_s": 1206.1280542159948,
+      "so_arm100_sim": "0.1.0",
+      "model_commit": "822c2d8f877dd166c5b7d3c9f7e3c3b6589473b7",
+      "date": "2026-09-24 18:33",
+      "sentences_used": [
+        "float the hand above the red block",
+        "get the gripper over the red one",
+        "reach toward the red cube"
+      ]
+    },
+    "reach:green": {
+      "task": "reach:green:distractors",
+      "physics": "nominal",
+      "dr": null,
+      "n_episodes": 20,
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "success_rate": 0.25,
+      "success_std": 0.07071067811865475,
+      "per_seed": [
+        0.25,
+        0.35,
+        0.25,
+        0.15,
+        0.25
+      ],
+      "return_mean": -7.258048597469367,
+      "steps_mean": 86.4,
+      "first_success_p50": 53.0,
+      "first_success_p90": 84.2,
+      "wall_s": 1268.7910371649996,
+      "so_arm100_sim": "0.1.0",
+      "model_commit": "822c2d8f877dd166c5b7d3c9f7e3c3b6589473b7",
+      "date": "2026-09-24 18:35",
+      "sentences_used": [
+        "float the hand above the green block",
+        "get the gripper over the green one",
+        "reach toward the green cube"
+      ]
+    },
+    "reach:blue": {
+      "task": "reach:blue:distractors",
+      "physics": "nominal",
+      "dr": null,
+      "n_episodes": 20,
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "success_rate": 0.24999999999999994,
+      "success_std": 0.09999999999999998,
+      "per_seed": [
+        0.3,
+        0.35,
+        0.2,
+        0.1,
+        0.3
+      ],
+      "return_mean": -6.774469626248398,
+      "steps_mean": 86.58,
+      "first_success_p50": 46.0,
+      "first_success_p90": 88.0,
+      "wall_s": 1210.0464963069971,
+      "so_arm100_sim": "0.1.0",
+      "model_commit": "822c2d8f877dd166c5b7d3c9f7e3c3b6589473b7",
+      "date": "2026-09-24 18:48",
+      "sentences_used": [
+        "float the hand above the blue block",
+        "get the gripper over the blue one",
+        "reach toward the blue cube"
+      ]
+    },
+    "push:green": {
+      "task": "push:green:distractors",
+      "physics": "nominal",
+      "dr": null,
+      "n_episodes": 20,
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "success_rate": 0.05,
+      "success_std": 0.05,
+      "per_seed": [
+        0.0,
+        0.1,
+        0.0,
+        0.1,
+        0.05
+      ],
+      "return_mean": -18.572348797437513,
+      "steps_mean": 144.87,
+      "first_success_p50": 43.0,
+      "first_success_p90": 64.6,
+      "wall_s": 2022.0641221810001,
+      "so_arm100_sim": "0.1.0",
+      "model_commit": "822c2d8f877dd166c5b7d3c9f7e3c3b6589473b7",
+      "date": "2026-09-24 19:03",
+      "sentences_used": [
+        "get the green block onto the yellow target by sliding it",
+        "nudge the green cube over to the marker",
+        "push the green one to the yellow circle"
+      ]
+    },
+    "push:blue": {
+      "task": "push:blue:distractors",
+      "physics": "nominal",
+      "dr": null,
+      "n_episodes": 20,
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "success_rate": 0.030000000000000006,
+      "success_std": 0.027386127875258306,
+      "per_seed": [
+        0.0,
+        0.05,
+        0.05,
+        0.05,
+        0.0
+      ],
+      "return_mean": -18.629024403780473,
+      "steps_mean": 146.79,
+      "first_success_p50": 39.0,
+      "first_success_p90": 56.6,
+      "wall_s": 2056.662715516002,
+      "so_arm100_sim": "0.1.0",
+      "model_commit": "822c2d8f877dd166c5b7d3c9f7e3c3b6589473b7",
+      "date": "2026-09-24 19:04",
+      "sentences_used": [
+        "get the blue block onto the yellow target by sliding it",
+        "nudge the blue cube over to the marker",
+        "push the blue one to the yellow circle"
+      ]
+    },
+    "lift:red": {
+      "task": "lift:red:distractors",
+      "physics": "nominal",
+      "dr": null,
+      "n_episodes": 20,
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "success_rate": 0.04,
+      "success_std": 0.041833001326703784,
+      "per_seed": [
+        0.1,
+        0.0,
+        0.05,
+        0.0,
+        0.05
+      ],
+      "return_mean": -6.13003645548284,
+      "steps_mean": 146.36,
+      "first_success_p50": 60.5,
+      "first_success_p90": 70.4,
+      "wall_s": 2028.457860211005,
+      "so_arm100_sim": "0.1.0",
+      "model_commit": "822c2d8f877dd166c5b7d3c9f7e3c3b6589473b7",
+      "date": "2026-09-24 19:04",
+      "sentences_used": [
+        "get the red one off the table",
+        "hoist the red block",
+        "take the red cube and hold it up"
+      ]
+    },
+    "lift:green": {
+      "task": "lift:green:distractors",
+      "physics": "nominal",
+      "dr": null,
+      "n_episodes": 20,
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "success_rate": 0.030000000000000006,
+      "success_std": 0.027386127875258306,
+      "per_seed": [
+        0.05,
+        0.0,
+        0.0,
+        0.05,
+        0.05
+      ],
+      "return_mean": -6.418412854775438,
+      "steps_mean": 147.48,
+      "first_success_p50": 65.0,
+      "first_success_p90": 71.4,
+      "wall_s": 2032.2145474369972,
+      "so_arm100_sim": "0.1.0",
+      "model_commit": "822c2d8f877dd166c5b7d3c9f7e3c3b6589473b7",
+      "date": "2026-09-24 19:07",
+      "sentences_used": [
+        "get the green one off the table",
+        "hoist the green block",
+        "take the green cube and hold it up"
+      ]
+    },
+    "pick_place:red": {
+      "task": "pick_place:red:distractors",
+      "physics": "nominal",
+      "dr": null,
+      "n_episodes": 20,
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "success_rate": 0.0,
+      "success_std": 0.0,
+      "per_seed": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "return_mean": -33.363426769347214,
+      "steps_mean": 250.0,
+      "first_success_p50": null,
+      "first_success_p90": null,
+      "wall_s": 3088.6866855780027,
+      "so_arm100_sim": "0.1.0",
+      "model_commit": "822c2d8f877dd166c5b7d3c9f7e3c3b6589473b7",
+      "date": "2026-09-24 19:26",
+      "sentences_used": [
+        "drop the red cube onto the yellow spot",
+        "relocate the red block to the yellow target",
+        "set the red cube down on the marker"
+      ]
+    },
+    "pick_place:blue": {
+      "task": "pick_place:blue:distractors",
+      "physics": "nominal",
+      "dr": null,
+      "n_episodes": 20,
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "success_rate": 0.01,
+      "success_std": 0.022360679774997897,
+      "per_seed": [
+        0.0,
+        0.0,
+        0.0,
+        0.05,
+        0.0
+      ],
+      "return_mean": -34.55042335353292,
+      "steps_mean": 248.36,
+      "first_success_p50": 86.0,
+      "first_success_p90": 86.0,
+      "wall_s": 2662.6614614579958,
+      "so_arm100_sim": "0.1.0",
+      "model_commit": "822c2d8f877dd166c5b7d3c9f7e3c3b6589473b7",
+      "date": "2026-09-24 19:33",
+      "sentences_used": [
+        "drop the blue cube onto the yellow spot",
+        "relocate the blue block to the yellow target",
+        "set the blue cube down on the marker"
+      ]
+    }
+  },
+  "so_arm100_sim": "0.1.0",
+  "model_commit": "822c2d8f877dd166c5b7d3c9f7e3c3b6589473b7",
+  "date": "2026-09-24 19:39",
+  "ckpt": "runs/policy_minilm_nofilm_s0.pt",
+  "encoder": "minilm"
+}

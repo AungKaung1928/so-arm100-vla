@@ -8,9 +8,10 @@ and (task, colour) pairs it never saw. CPU only. Built on
 defines the tasks, the expert, the success criteria and the instruction
 templates this repository holds out.
 
-**Status: code complete, tests green, no policy trained yet.** Every number
-marked `TODO(measure)` is produced by the named command and filled in from
-its JSON, never typed in.
+**Status: measured 2026-09-24.** The trained policy is weak (11% on seen
+instructions, 3% on held-out combinations) and the encoder ablation is
+inside its own noise. Every number below is produced by the named command
+and copied from its JSON in `runs/`, never typed in.
 
 **Walkthrough:** https://aungkaung1928.github.io/projects/so-arm100.html — the bench and the three policy projects built on it, explained end to end.
 
@@ -52,15 +53,30 @@ Held-out pairs: `lift:blue`, `push:red`, `pick_place:green`. Five training
 and three held-out templates per task, e.g. training "pick up the {c} cube",
 held-out "hoist the {c} block".
 
-### Results, 100 episodes x 5 seeds per (task, colour) cell, nominal physics
+### Results, 20 episodes x 5 seeds per (task, colour) cell, nominal physics
 
-`python eval_language.py --ckpt runs/policy_minilm_s0.pt --episodes 100 --seeds 5`
+`python eval_language.py --ckpt runs/policy_minilm_s0.pt --episodes 20 --seeds 5 --jobs 8`
+
+The protocol was written as 100 episodes per seed. At about 1.7 hours per
+policy for 20 on this CPU, 100 would have been over eight hours per policy
+and 25 for the ablation, so every policy here ran 20 x 5; the spread over
+seeds below is what that costs.
 
 | split | success | +- over seeds | reach | push | lift | pick_place |
 |---|---|---|---|---|---|---|
-| seen | TODO(measure) | | | | | |
-| paraphrase | TODO(measure) | | | | | |
-| combo | TODO(measure) | | | | | |
+| seen | 0.110 | 0.081 | 0.25 | 0.04 | 0.07 | 0.01 |
+| paraphrase | 0.097 | 0.060 | 0.24 | 0.03 | 0.03 | 0.03 |
+| combo | 0.027 | 0.046 | — | 0.03 | 0.03 | 0.02 |
+
+**What this says: the policy barely works.** Reach succeeds about a
+quarter of the time; push, lift and pick-place sit between 0 and 7%, which
+is close to the floor. This is the measured result, not a placeholder. The
+training record says why: the final-epoch L1 on held-out demonstration
+episodes is 0.128 against 0.057 on the training ones (`runs/policy_minilm_s0.json`),
+from 162 training episodes, about 20 per (task, colour) pair. The policy
+fits the demonstrations it saw and does not generalise from them, before
+language even enters. The next experiment is more demonstrations per pair,
+not a different encoder.
 
 Reference line: the scripted expert that produced the data succeeds at
 roughly 0.9 or better on `lift` and `pick_place`, 0.8-0.9 on `push`, 1.0 on
@@ -83,12 +99,22 @@ because the policy, data and seeds are identical.
 
 | encoder | seen | paraphrase | combo |
 |---|---|---|---|
-| MiniLM | TODO(measure) | | |
-| hashed | TODO(measure) | | |
-| MiniLM, no FiLM | TODO(measure) | | |
+| MiniLM | 0.110 ± 0.081 | 0.097 ± 0.060 | 0.027 ± 0.046 |
+| hashed | 0.092 ± 0.046 | 0.073 ± 0.057 | 0.027 ± 0.021 |
+| MiniLM, no FiLM | 0.137 ± 0.075 | 0.110 ± 0.056 | 0.033 ± 0.038 |
 
-Three seeds each; the table reports mean and spread. `--no-film` removes the
-language modulation of the vision features, leaving language as a token only.
+Success rate, mean ± standard deviation over the 5 evaluation seeds, one
+training seed per encoder (the protocol said three; one training run is
+about four minutes, but each evaluation is 1.7 hours, and three would have
+tripled that). `--no-film` removes the language modulation of the vision
+features, leaving language as a token only.
+
+**The ablation does not separate the encoders.** Every row is inside the
+others' spread, and the ordering (no FiLM highest on `seen`) is noise at
+this success level: with the base policy at 3-14%, there is no headroom for
+the encoder to show a difference. The test is valid; the policy under it is
+too weak for it to have power. It becomes informative once the base policy
+is fixed by more data, and not before.
 
 One measured fact about MiniLM on these templates, before any policy is
 trained (cosine similarities, `test_text.py` records the behaviour rather
@@ -114,13 +140,22 @@ result is low. This is a **calibration line**, not a comparison of
 capability: it says what a well-known model does under this protocol with
 no adaptation, next to a small policy that was trained for it.
 
-| task | success (10 episodes) | forward pass p50 |
+| task | success (10 episodes each) | chunk inference p50, CPU |
 |---|---|---|
-| reach / push / lift / pick_place | TODO(measure) | TODO(measure) s |
+| reach / push / lift / pick_place | 0.00 / 0.00 / 0.00 / 0.00 | 3.16 s (p90 3.30 s, n = 130) |
+
+0 of 40 episodes, as expected. The line is still useful for two things: it
+shows the observation mapping runs end to end against the real checkpoint,
+and it prices the model on this machine. One 50-step action chunk costs
+3.2 s on 8 CPU threads, which is 64x the 50 ms control period at 20 Hz;
+even with chunking the arm would wait 3 s every 2.5 s of motion. On CPU a
+500M-parameter VLA is not a real-time controller, whatever its success
+rate after fine-tuning.
 
 Caveats that make this a reference and not a result: different embodiment
 normalisation statistics, different camera placement, radians against motor
-units, 20 Hz control against 30 fps data. `--dry-run` validates the
+units, 20 Hz control against 30 fps data, and one rendered view copied
+into all three of its camera slots. `--dry-run` validates the
 observation mapping against a stub with the same feature keys and runs in
 the tests without the download.
 

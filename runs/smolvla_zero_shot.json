@@ -1,0 +1,100 @@
+{
+  "model": "lerobot/smolvla_base",
+  "episodes": 10,
+  "cells": {
+    "reach": {
+      "task": "reach:red:distractors",
+      "physics": "nominal",
+      "dr": null,
+      "n_episodes": 10,
+      "seeds": [
+        0
+      ],
+      "success_rate": 0.0,
+      "success_std": 0.0,
+      "per_seed": [
+        0.0
+      ],
+      "return_mean": -32.29094913803863,
+      "steps_mean": 100.0,
+      "first_success_p50": null,
+      "first_success_p90": null,
+      "wall_s": 74.21087494600215,
+      "so_arm100_sim": "0.1.0",
+      "model_commit": "822c2d8f877dd166c5b7d3c9f7e3c3b6589473b7",
+      "date": "2026-09-24 19:52"
+    },
+    "push": {
+      "task": "push:red:distractors",
+      "physics": "nominal",
+      "dr": null,
+      "n_episodes": 10,
+      "seeds": [
+        0
+      ],
+      "success_rate": 0.0,
+      "success_std": 0.0,
+      "per_seed": [
+        0.0
+      ],
+      "return_mean": -37.03754216854707,
+      "steps_mean": 150.0,
+      "first_success_p50": null,
+      "first_success_p90": null,
+      "wall_s": 137.24822212299478,
+      "so_arm100_sim": "0.1.0",
+      "model_commit": "822c2d8f877dd166c5b7d3c9f7e3c3b6589473b7",
+      "date": "2026-09-24 19:54"
+    },
+    "lift": {
+      "task": "lift:red:distractors",
+      "physics": "nominal",
+      "dr": null,
+      "n_episodes": 10,
+      "seeds": [
+        0
+      ],
+      "success_rate": 0.0,
+      "success_std": 0.0,
+      "per_seed": [
+        0.0
+      ],
+      "return_mean": -27.962410209030974,
+      "steps_mean": 150.0,
+      "first_success_p50": null,
+      "first_success_p90": null,
+      "wall_s": 151.96261519499967,
+      "so_arm100_sim": "0.1.0",
+      "model_commit": "822c2d8f877dd166c5b7d3c9f7e3c3b6589473b7",
+      "date": "2026-09-24 19:57"
+    },
+    "pick_place": {
+      "task": "pick_place:red:distractors",
+      "physics": "nominal",
+      "dr": null,
+      "n_episodes": 10,
+      "seeds": [
+        0
+      ],
+      "success_rate": 0.0,
+      "success_std": 0.0,
+      "per_seed": [
+        0.0
+      ],
+      "return_mean": -69.47424306962213,
+      "steps_mean": 250.0,
+      "first_success_p50": null,
+      "first_success_p90": null,
+      "wall_s": 251.97422490100143,
+      "so_arm100_sim": "0.1.0",
+      "model_commit": "822c2d8f877dd166c5b7d3c9f7e3c3b6589473b7",
+      "date": "2026-09-24 20:01"
+    }
+  },
+  "forward_s_p50": 3.156867206998868,
+  "forward_s_p90": 3.2982147538939897,
+  "n_forward": 130,
+  "so_arm100_sim": "0.1.0",
+  "model_commit": "822c2d8f877dd166c5b7d3c9f7e3c3b6589473b7",
+  "date": "2026-09-24 20:01"
+}

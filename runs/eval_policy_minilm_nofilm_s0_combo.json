@@ -1,0 +1,138 @@
+{
+  "split": "combo",
+  "templates": "train",
+  "n_episodes": 20,
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "physics": "nominal",
+  "success_rate": 0.03333333333333334,
+  "success_std_mean": 0.037980162917319295,
+  "by_task": {
+    "lift": 0.02,
+    "push": 0.06000000000000001,
+    "pick_place": 0.02
+  },
+  "cells": {
+    "lift:blue": {
+      "task": "lift:blue:distractors",
+      "physics": "nominal",
+      "dr": null,
+      "n_episodes": 20,
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "success_rate": 0.02,
+      "success_std": 0.02738612787525831,
+      "per_seed": [
+        0.05,
+        0.05,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "return_mean": -6.074519021772561,
+      "steps_mean": 148.29,
+      "first_success_p50": 64.5,
+      "first_success_p90": 64.9,
+      "wall_s": 1762.5201939280014,
+      "so_arm100_sim": "0.1.0",
+      "model_commit": "822c2d8f877dd166c5b7d3c9f7e3c3b6589473b7",
+      "date": "2026-09-24 19:23",
+      "sentences_used": [
+        "grab the blue block and raise it",
+        "lift the blue cube",
+        "pick the blue block up off the table",
+        "pick up the blue cube",
+        "raise the blue cube into the air"
+      ]
+    },
+    "push:red": {
+      "task": "push:red:distractors",
+      "physics": "nominal",
+      "dr": null,
+      "n_episodes": 20,
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "success_rate": 0.06000000000000001,
+      "success_std": 0.041833001326703784,
+      "per_seed": [
+        0.05,
+        0.1,
+        0.05,
+        0.1,
+        0.0
+      ],
+      "return_mean": -18.049856711935785,
+      "steps_mean": 143.49,
+      "first_success_p50": 39.5,
+      "first_success_p90": 48.5,
+      "wall_s": 1527.4588316519948,
+      "so_arm100_sim": "0.1.0",
+      "model_commit": "822c2d8f877dd166c5b7d3c9f7e3c3b6589473b7",
+      "date": "2026-09-24 19:28",
+      "sentences_used": [
+        "move the red block to the target by pushing it",
+        "push the red block onto the marker",
+        "push the red cube to the target",
+        "shove the red cube to the yellow spot",
+        "slide the red cube onto the yellow marker"
+      ]
+    },
+    "pick_place:green": {
+      "task": "pick_place:green:distractors",
+      "physics": "nominal",
+      "dr": null,
+      "n_episodes": 20,
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "success_rate": 0.02,
+      "success_std": 0.044721359549995794,
+      "per_seed": [
+        0.0,
+        0.0,
+        0.0,
+        0.1,
+        0.0
+      ],
+      "return_mean": -36.024606153674156,
+      "steps_mean": 246.76,
+      "first_success_p50": 88.0,
+      "first_success_p90": 112.8,
+      "wall_s": 2116.284883592998,
+      "so_arm100_sim": "0.1.0",
+      "model_commit": "822c2d8f877dd166c5b7d3c9f7e3c3b6589473b7",
+      "date": "2026-09-24 19:39",
+      "sentences_used": [
+        "carry the green block to the yellow spot",
+        "move the green cube onto the marker",
+        "pick up the green cube and put it on the target",
+        "place the green block on the yellow marker",
+        "put the green cube on the target"
+      ]
+    }
+  },
+  "so_arm100_sim": "0.1.0",
+  "model_commit": "822c2d8f877dd166c5b7d3c9f7e3c3b6589473b7",
+  "date": "2026-09-24 19:39",
+  "ckpt": "runs/policy_minilm_nofilm_s0.pt",
+  "encoder": "minilm"
+}
