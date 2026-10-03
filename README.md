@@ -8,14 +8,67 @@ and (task, colour) pairs it never saw. CPU only. Built on
 defines the tasks, the expert, the success criteria and the instruction
 templates this repository holds out.
 
-**Status: measured 2026-09-24.** The trained policy is weak (11% on seen
-instructions, 3% on held-out combinations) and the encoder ablation is
-inside its own noise. Every number below is produced by the named command
-and copied from its JSON in `runs/`, never typed in.
-
 **Walkthrough:** https://aungkaung1928.github.io/projects/so-arm100.html — the bench and the three policy projects built on it, explained end to end.
 
-## What this is, and what it is not
+## At a glance
+
+Success rate per split, nominal physics, 20 episodes × 5 evaluation seeds per (task, colour) cell, mean ± sd over seeds, one training seed per row. Measured 2026-09-24.
+
+| policy | `seen` (training templates, training pairs) | `paraphrase` (held-out templates) | `combo` (held-out pairs) |
+|---|---|---|---|
+| `LangPolicy`, MiniLM encoder, FiLM | 0.110 ± 0.081 | 0.097 ± 0.060 | 0.027 ± 0.046 |
+| `LangPolicy`, hashed bag-of-words encoder | 0.092 ± 0.046 | 0.073 ± 0.057 | 0.027 ± 0.021 |
+| `LangPolicy`, MiniLM, no FiLM | 0.137 ± 0.075 | 0.110 ± 0.056 | 0.033 ± 0.038 |
+| SmolVLA-base, zero-shot, inference only | 0 of 40 episodes (10 per task); 3.16 s per action chunk on CPU | not run | not run |
+| scripted expert (bench, development readings) | 1.0 reach, 0.8–0.9 push, ≥ 0.9 lift / pick_place | n/a | n/a |
+
+```mermaid
+flowchart LR
+    I["instruction<br/>e.g. 'pick up the red cube'<br/>5 training + 3 held-out templates per task"] --> E
+    subgraph E["text encoder, 384-d"]
+        direction TB
+        M["MiniLM all-MiniLM-L6-v2<br/>22M params, frozen"]
+        H["hashed words + bigrams<br/>no parameters, no semantics"]
+    end
+    C["front camera 96x128<br/>small CNN → FiLM → 32 keypoints"]
+    P["proprio, 6 joints"]
+    E -- "FiLM on CNN features<br/>(--no-film: token only)" --> C
+    E --> T
+    C --> T
+    P --> T
+    T["3 tokens → 128-wide transformer<br/>about 1M params, L1 loss<br/>162 training episodes"] --> A["chunk of 10 joint targets<br/>ChunkEnsembler → arm at 20 Hz"]
+```
+
+### Results
+
+| method | metric | value | condition |
+|---|---|---|---|
+| `LangPolicy`, MiniLM | success, `seen` | 0.110 ± 0.081 | per task: reach 0.25, push 0.04, lift 0.07, pick_place 0.01 |
+| `LangPolicy`, MiniLM | success, `paraphrase` | 0.097 ± 0.060 | reach 0.24, push 0.03, lift 0.03, pick_place 0.03 |
+| `LangPolicy`, MiniLM | success, `combo` | 0.027 ± 0.046 | held-out pairs `lift:blue`, `push:red`, `pick_place:green` |
+| `LangPolicy`, MiniLM | final-epoch L1, training / held-out episodes | 0.057 / 0.128 | 162 training episodes, about 20 per (task, colour) pair |
+| encoder ablation | success spread across the three rows | every row inside the others' spread | base policy at 3–14%, no headroom |
+| MiniLM cosine, "lift the green cube" vs | paraphrase / other task / other colour | 0.38–0.59 / **0.63** / 0.82 | "hoist the green block", "push the red cube to the target", "lift the blue cube" |
+| SmolVLA-base, zero-shot | success | 0.00 / 0.00 / 0.00 / 0.00 | 10 episodes per task, 0 of 40 |
+| SmolVLA-base | 50-step chunk inference p50 | 3.16 s (p90 3.30 s, n = 130) | 8 CPU threads; 64x the 50 ms control period |
+| LoRA gate, SmolVLM-256M LM shape | s/step, batch 1, seq 256, 8 threads | **0.51 s, best of 2 → GO** | rule fixed beforehand: GO under 5 s/step; 176.7M stand-in, 0.55M trainable (0.31%) |
+| evaluation | wall per policy | about 1.7 h | 20 × 5; the written protocol of 100 × 5 would have been over 8 h |
+| Docker image | tests inside | 21 passed, 2 skipped | 3.13 GB, built 2026-09-23 |
+
+### Key points
+
+- **The policy barely works, and the data is why.** Seen 0.110, paraphrase 0.097, combo 0.027, with reach at about a quarter and push, lift and pick_place at 0–7%; the final-epoch L1 is 0.128 on held-out demonstration episodes against 0.057 on training ones from 162 episodes, so it fits what it saw before language even enters, and the next experiment is more demonstrations per pair.
+- **The encoder ablation has no power.** MiniLM 0.110 / 0.097 / 0.027, hashed 0.092 / 0.073 / 0.027 and no-FiLM 0.137 / 0.110 / 0.033 are each inside the others' spread, so the ordering is noise at this success level and the test only becomes informative once the base policy is fixed.
+- **MiniLM is driven by surface words, not by the colour.** "lift the green cube" sits 0.63 from "push the red cube to the target" and 0.82 from "lift the blue cube", but only 0.38 from its own paraphrase "hoist the green block", which is why `paraphrase` is hard and `combo` asks the policy to read colour out of two nearly parallel vectors.
+- **SmolVLA-base zero-shot scores 0 of 40 and costs 3.16 s per chunk.** One 50-step action chunk on 8 CPU threads is 64x the 50 ms control period, so a 500M-parameter VLA is not a real-time controller on CPU whatever its success after fine-tuning; the line is a calibration against a different embodiment, not evidence about SmolVLA.
+- **The LoRA gate passed at 0.51 s/step but no fine-tune was run.** 2,000 steps would be about 0.3 h, yet the gate timed the language-model half only (no vision tower, no flow-matching head), every policy here is one training seed, and the protocol was cut from 100 to 20 episodes per seed to fit 1.7 h per evaluation.
+
+<details><summary><b>What this is, and what it is not</b></summary>
+
+**Status: measured 2026-09-24.** The trained policy is weak (11% on seen
+instructions, 3% on held-out combinations) and the encoder ablation is
+inside its own noise. Every number in this README is produced by the named command
+and copied from its JSON in `runs/`, never typed in.
 
 It **is**: a 128-wide transformer over three tokens (a frozen sentence
 embedding, 32 image keypoints from a small CNN, the arm's proprioception)
@@ -37,7 +90,9 @@ to phrasings and combinations it was not trained on. That property can be
 tested at 1M parameters on a laptop CPU with a real held-out protocol. What
 cannot be tested here is scale, and this repository does not pretend to.
 
-## The three splits
+</details>
+
+<details><summary><b>The three splits and the measured result</b></summary>
 
 Sentences and (task, colour) combinations come from the bench's
 `instructions` module, so "unseen" means the same thing here, in the
@@ -83,7 +138,9 @@ roughly 0.9 or better on `lift` and `pick_place`, 0.8-0.9 on `push`, 1.0 on
 `reach` in the bench's development readings; its measured table lives in
 the bench repository. A learned policy is bounded by it.
 
-## The encoder ablation: does the language model matter?
+</details>
+
+<details><summary><b>The encoder ablation: does the language model matter?</b></summary>
 
 Two encoders produce the same 384-d embedding shape:
 
@@ -128,7 +185,11 @@ read colour out of a small difference between two nearly parallel vectors.
 Whether FiLM on the vision features is enough to do that is exactly what the
 ablation measures.
 
-## SmolVLA-base, zero-shot, same simulator
+</details>
+
+<details><summary><b>SmolVLA-base zero-shot, and the LoRA gate</b></summary>
+
+### SmolVLA-base, zero-shot, same simulator
 
 `python smolvla_reference.py --run --episodes 10`
 
@@ -159,7 +220,7 @@ into all three of its camera slots. `--dry-run` validates the
 observation mapping against a stub with the same feature keys and runs in
 the tests without the download.
 
-## The LoRA gate
+### The LoRA gate
 
 `OMP_NUM_THREADS=8 nice -n 10 python lora_gate.py`
 
@@ -180,7 +241,9 @@ tower and a flow-matching head that were not timed, and a GO here says a
 fine-tune is affordable to *try*, not that it would help. A NO-GO would have
 dropped the fine-tune from the project; it did not lower the bar.
 
-## What is in the box
+</details>
+
+<details><summary><b>What is in the box</b></summary>
 
 ```
 so_arm100_vla/
@@ -200,6 +263,8 @@ tests/           encoders, splits, windowing, shapes, ensembling, LoRA math,
 
 Model size at the default configuration: printed by `train.py`
 (`LangPolicy N params`), about 1M.
+
+</details>
 
 ## Reproducing
 
@@ -225,7 +290,7 @@ docker build -t so-arm100-vla . && docker run --rm so-arm100-vla   # offline tes
 
 Image built on 2026-09-23 and its default command passed inside it (21 tests passed, 2 skipped, the one that downloads a text encoder deselected), image size 3.13 GB.
 
-## Limits, stated
+<details><summary><b>Limits, stated</b></summary>
 
 - Simulation only, fixed front camera, three cubes of three colours.
 - Language is templated. Negation, relations and counting are outside the
@@ -235,6 +300,8 @@ Image built on 2026-09-23 and its default command passed inside it (21 tests pas
 - The SmolVLA line is zero-shot from a different embodiment and is not
   evidence about SmolVLA.
 - Nothing here has run on a physical arm.
+
+</details>
 
 ## Licence
 
