@@ -274,13 +274,19 @@ PyTorch and to the compiled OpenVINO model, both on 4 threads. Measured
 | max \|PyTorch - OpenVINO\| over one 50 x 6 action chunk | 3.9e-6 (3 inputs; the chunks differ by up to 0.18 between inputs) |
 | PyTorch FP32, one chunk (10 denoising steps), p50 / p99, n = 30 | 3,154 / 3,503 ms |
 | OpenVINO FP32, same, n = 30 | 3,096 / 3,255 ms |
+| OpenVINO INT8 weights (`edge/int8_ov.py`, `nncf.compress_weights` defaults, nncf 3.4.0), n = 30 | 1,295 / 1,476 ms |
+| max \|PyTorch - OpenVINO INT8\| over one chunk, 3 inputs | 0.073-0.160 (mean 0.023-0.048) |
 
 Same numbers within 2 % at p50: in FP32 the backend change buys nothing on this
-CPU; the gain, if any, has to come from INT8 weights or fewer denoising steps
-(not measured yet). Values are in the normalized action space, before the
+CPU. INT8 weight compression does: weights 1.57 → 0.40 GB, p50 2.4x faster. But
+its error against PyTorch (up to 0.16) is the same size as the difference between
+two different inputs' chunks (0.13-0.19), so INT8 is not shown to be safe: that
+needs closed-loop success on a fine-tuned checkpoint (smolvla_base itself scores 0.00
+on all four tasks here, so its success cannot show a drop). Values are in the normalized action space, before the
 postprocessor. One chunk covers 50 control steps = 2.5 s at the simulator's
 20 Hz (`so_arm100_sim.env.CONTROL_HZ`), so a 3.1 s chunk is 1.24x too slow for
-real time on this CPU: the arm would stall between chunks.
+real time on this CPU: the arm would stall between chunks. INT8 weights at 1.3 s
+would fit (0.52 of the chunk), if the accuracy holds.
 
 <details><summary><b>What is in the box</b></summary>
 
