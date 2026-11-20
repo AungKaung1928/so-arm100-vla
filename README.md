@@ -259,6 +259,29 @@ A fine-tune replaces those stats with the dataset's own, so neither carries over
 
 </details>
 
+<details><summary><b>Edge: SmolVLA-base in OpenVINO on a laptop CPU (FP32)</b></summary>
+
+`edge/export_ov.py` exports `lerobot/smolvla_base` through Intel's `physicalai`
+0.3.0 library (`SmolVLA(...).to_openvino`, FP32; venv pins in
+`edge/requirements-edge.txt`, separate from the main requirements). 62 s, a
+1.57 GB weights file plus an OpenVINO tokenizer. `edge/parity_time.py` feeds the
+same preprocessed inputs (3 cameras at 512x512, 6-d state, 48 prompt tokens) to
+PyTorch and to the compiled OpenVINO model, both on 4 threads. Measured
+2026-11-21 on an Intel Core Ultra 5 225H in WSL2 (4 vCPUs visible), not a Jetson:
+
+| | value |
+|---|---|
+| max \|PyTorch - OpenVINO\| over one 50 x 6 action chunk | 3.9e-6 (3 inputs; the chunks differ by up to 0.18 between inputs) |
+| PyTorch FP32, one chunk (10 denoising steps), p50 / p99, n = 30 | 3,154 / 3,503 ms |
+| OpenVINO FP32, same, n = 30 | 3,096 / 3,255 ms |
+
+Same numbers within 2 % at p50: in FP32 the backend change buys nothing on this
+CPU; the gain, if any, has to come from INT8 weights or fewer denoising steps
+(not measured yet). Values are in the normalized action space, before the
+postprocessor. One chunk covers 50 control steps = 2.5 s at the simulator's
+20 Hz (`so_arm100_sim.env.CONTROL_HZ`), so a 3.1 s chunk is 1.24x too slow for
+real time on this CPU: the arm would stall between chunks.
+
 <details><summary><b>What is in the box</b></summary>
 
 ```
