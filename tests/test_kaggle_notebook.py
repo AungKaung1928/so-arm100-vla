@@ -23,7 +23,9 @@ def test_python_cells_parse():
 
 def test_records_exactly_the_training_pairs():
     I = pytest.importorskip("so_arm100_sim.instructions")
-    combos = [tuple(s.split(":")) for s in mk.COMBOS.split()]
+    specs = mk.COMBOS.split()
+    assert all(s.endswith(":distractors") for s in specs)   # same scenes as data.py and the bench
+    combos = [tuple(s.split(":")[:2]) for s in specs]
     assert combos == list(I.TRAIN_COMBOS)
     assert not set(combos) & set(I.HELDOUT_COMBOS)
 

@@ -6,8 +6,11 @@ import json
 import os
 
 SIM_REV = "4f9b6b1"   # so-arm100-sim commit with `record --smolvla`
-COMBOS = ("reach:red reach:green reach:blue push:green push:blue "
-          "lift:red lift:green pick_place:red pick_place:blue")  # instructions.TRAIN_COMBOS
+COMBOS = " ".join(f"{p}:distractors" for p in (
+    "reach:red reach:green reach:blue push:green push:blue "
+    "lift:red lift:green pick_place:red pick_place:blue").split())
+# instructions.TRAIN_COMBOS, all three cubes on the table as in so_arm100_vla/data.py
+# and the bench (eval_language.py), so the colour in the instruction decides the target
 
 MD = f"""# SmolVLA-base fine-tune on so-arm100-sim demonstrations (Kaggle T4)
 
@@ -16,7 +19,7 @@ Settings before **Run all**: Accelerator = GPU T4 x1, Internet = on.
 What runs:
 1. Python 3.12 venv (lerobot needs >= 3.12) with `lerobot[smolvla]==0.6.1` and so-arm100-sim @ `{SIM_REV}`.
 2. Records 20 successful scripted-expert episodes for each of the 9 training (task, colour) pairs,
-   in the smolvla_base layout (`record --smolvla`: cameras top/front/side -> camera1..3, 6-d state).
+   with all three cubes on the table (distractors), in the smolvla_base layout (`record --smolvla`: cameras top/front/side -> camera1..3, 6-d state).
    Held-out pairs lift:blue, push:red, pick_place:green are never recorded.
 3. Timing run: 20 steps, batch 32 -> 16 -> 8 until it fits; prints s/step.
 4. Fine-tune from `lerobot/smolvla_base` for as many steps as fit in `TRAIN_HOURS`.
