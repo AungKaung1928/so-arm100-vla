@@ -1,0 +1,113 @@
+"""Writes smolvla_finetune.ipynb (Kaggle, GPU T4, Internet on). Run: python kaggle/make_notebook.py
+
+Kept as a script so the notebook is diffable and testable (tests/test_kaggle_notebook.py).
+"""
+import json
+import os
+
+SIM_REV = "4f9b6b1"   # so-arm100-sim commit with `record --smolvla`
+COMBOS = ("reach:red reach:green reach:blue push:green push:blue "
+          "lift:red lift:green pick_place:red pick_place:blue")  # instructions.TRAIN_COMBOS
+
+MD = f"""# SmolVLA-base fine-tune on so-arm100-sim demonstrations (Kaggle T4)
+
+Settings before **Run all**: Accelerator = GPU T4 x1, Internet = on.
+
+What runs:
+1. Python 3.12 venv (lerobot needs >= 3.12) with `lerobot[smolvla]==0.6.1` and so-arm100-sim @ `{SIM_REV}`.
+2. Records 20 successful scripted-expert episodes for each of the 9 training (task, colour) pairs,
+   in the smolvla_base layout (`record --smolvla`: cameras top/front/side -> camera1..3, 6-d state).
+   Held-out pairs lift:blue, push:red, pick_place:green are never recorded.
+3. Timing run: 20 steps, batch 32 -> 16 -> 8 until it fits; prints s/step.
+4. Fine-tune from `lerobot/smolvla_base` for as many steps as fit in `TRAIN_HOURS`.
+5. Writes `/kaggle/working/smolvla_sim.zip` (last checkpoint weights + processors, logs). Download it; evaluation runs on the laptop CPU.
+
+Measured before this notebook (laptop CPU, 4 threads, batch 2): 75-86 s/step, 100M of 450M params trainable.
+No GPU number exists yet: this notebook produces the first one (label results "Kaggle T4")."""
+
+CELLS = [
+    ("code", """TRAIN_HOURS = 2.5     # Kaggle session limit is 12 h; keep margin for recording + zip
+EPISODES_PER_PAIR = 20
+import os, sys, subprocess
+os.environ["MUJOCO_GL"] = "egl"
+print(sys.version)
+print(subprocess.run(["nvidia-smi", "--query-gpu=name,memory.total", "--format=csv"],
+                     capture_output=True, text=True).stdout)"""),
+    ("code", f"""%%bash
+set -e
+pip -q install uv
+uv venv -q -p 3.12 /kaggle/working/venv
+uv pip -q install -p /kaggle/working/venv/bin/python "lerobot[smolvla]==0.6.1" \\
+  "so-arm100-sim[lerobot] @ git+https://github.com/AungKaung1928/so-arm100-sim@{SIM_REV}"
+/kaggle/working/venv/bin/python -c "import lerobot, so_arm100_sim, torch; print(torch.__version__, torch.cuda.is_available())\""""),
+    ("code", """# GL check: EGL first; fall back to OSMesa (apt is fine on Kaggle, not on the laptop)
+PY = "/kaggle/working/venv/bin/python"
+def gl_ok(backend):
+    env = dict(os.environ, MUJOCO_GL=backend, PYOPENGL_PLATFORM=backend)
+    r = subprocess.run([PY, "-c", "from so_arm100_sim import render; print(render.available())"],
+                       capture_output=True, text=True, env=env)
+    return r.stdout.strip().endswith("True")
+if not gl_ok("egl"):
+    subprocess.run("apt-get -qq install -y libosmesa6 > /dev/null", shell=True, check=True)
+    os.environ["MUJOCO_GL"] = "osmesa"
+os.environ["PYOPENGL_PLATFORM"] = os.environ["MUJOCO_GL"]
+assert gl_ok(os.environ["MUJOCO_GL"]), "no GL backend"
+print("GL:", os.environ["MUJOCO_GL"])"""),
+    ("code", f"""import time
+DS = "/kaggle/working/data/sim_smolvla"
+t0 = time.time()
+subprocess.run([PY, "-m", "so_arm100_sim.record", "--root", DS, "--repo-id", "local/sim_smolvla",
+                "--smolvla", "--episodes", str(EPISODES_PER_PAIR), "--tasks", *"{COMBOS}".split()],
+               check=True)
+print(f"recording wall {{time.time() - t0:.0f}} s")
+print(open(DS + "/recording_log.json").read())"""),
+    ("code", """import re, shutil
+def train(steps, batch, out, extra=()):
+    cmd = [PY.replace("python", "lerobot-train"), "--policy.path=lerobot/smolvla_base",
+           "--dataset.repo_id=local/sim_smolvla", f"--dataset.root={DS}",
+           "--policy.push_to_hub=false", "--policy.device=cuda", "--wandb.enable=false",
+           f"--batch_size={batch}", f"--steps={steps}", f"--output_dir={out}", *extra]
+    return subprocess.run(cmd, capture_output=True, text=True)
+
+def s_per_step(log):
+    v = [float(x) for x in re.findall(r"updt_s:([0-9.]+)", log)]
+    return sum(v[2:]) / len(v[2:]) if len(v) > 2 else float("nan")   # skip warm-up steps
+
+for BATCH in (32, 16, 8):
+    shutil.rmtree("/kaggle/working/timing", ignore_errors=True)
+    r = train(20, BATCH, "/kaggle/working/timing", ["--log_freq=1", "--save_checkpoint=false"])
+    if r.returncode == 0:
+        break
+    print(f"batch {BATCH} failed:", r.stderr[-400:])
+SPS = s_per_step(r.stderr + r.stdout)
+STEPS = int(TRAIN_HOURS * 3600 / SPS)
+print(f"Kaggle T4: batch {BATCH}, {SPS:.3f} s/step (mean of steps 3-20) -> {STEPS} steps in {TRAIN_HOURS} h")"""),
+    ("code", """OUT = "/kaggle/working/train"
+shutil.rmtree(OUT, ignore_errors=True)
+r = train(STEPS, BATCH, OUT, [f"--save_freq={max(STEPS // 5, 100)}", "--log_freq=50"])
+open("/kaggle/working/train.log", "w").write(r.stdout + r.stderr)
+print(r.returncode, (r.stdout + r.stderr)[-1500:])"""),
+    ("code", """%%bash
+cd /kaggle/working
+cp data/sim_smolvla/recording_log.json train/ 2>/dev/null || true
+cp train.log train/
+zip -qr smolvla_sim.zip train/checkpoints/last/pretrained_model train/recording_log.json train/train.log  # weights only; optimizer state stays on Kaggle
+ls -la smolvla_sim.zip"""),
+]
+
+
+def build():
+    cells = [{"cell_type": "markdown", "metadata": {}, "source": MD.splitlines(True)}]
+    for kind, src in CELLS:
+        cells.append({"cell_type": kind, "metadata": {}, "execution_count": None,
+                      "outputs": [], "source": src.splitlines(True)})
+    return {"cells": cells, "metadata": {"kernelspec": {"name": "python3", "display_name": "Python 3",
+                                                        "language": "python"}},
+            "nbformat": 4, "nbformat_minor": 5}
+
+
+if __name__ == "__main__":
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "smolvla_finetune.ipynb")
+    with open(path, "w") as f:
+        json.dump(build(), f, indent=1)
+    print(path)
