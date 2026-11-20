@@ -282,7 +282,22 @@ CPU. INT8 weight compression does: weights 1.57 → 0.40 GB, p50 2.4x faster. Bu
 its error against PyTorch (up to 0.16) is the same size as the difference between
 two different inputs' chunks (0.13-0.19), so INT8 is not shown to be safe: that
 needs closed-loop success on a fine-tuned checkpoint (smolvla_base itself scores 0.00
-on all four tasks here, so its success cannot show a drop). Values are in the normalized action space, before the
+on all four tasks here, so its success cannot show a drop).
+
+Fewer denoising steps do not help either (`edge/steps_tradeoff.py`, PyTorch FP32, 4 threads,
+n = 10 per row, error against the default 10-step chunk on the same 3 inputs, whose
+10-step chunks differ from each other by up to 0.26):
+
+| `num_steps` | max / mean error vs 10 steps | p50 / p99 per chunk |
+|---|---|---|
+| 10 | 0 / 0 | 2,967 / 3,039 ms |
+| 5 | 0.073 / 0.030 | 3,036 / 3,233 ms |
+| 2 | 0.407 / 0.121 | 2,827 / 2,990 ms |
+| 1 | 0.715 / 0.200 | 3,096 / 3,414 ms |
+
+Time stays at 2.8-3.1 s from 1 to 10 steps while the output changes, which points to
+the shared prefix (3 images through the vision encoder plus the language model), not the
+denoising loop, as where the time goes. Not profiled per layer yet. Values are in the normalized action space, before the
 postprocessor. One chunk covers 50 control steps = 2.5 s at the simulator's
 20 Hz (`so_arm100_sim.env.CONTROL_HZ`), so a 3.1 s chunk is 1.24x too slow for
 real time on this CPU: the arm would stall between chunks. INT8 weights at 1.3 s
