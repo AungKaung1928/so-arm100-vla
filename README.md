@@ -314,7 +314,23 @@ owner, n = 5 chunks; the hooks themselves raise the chunk to 3,444 ms p50):
 
 The vision encoder is the lever: fewer cameras or a smaller input size, not fewer
 steps. The interleaved 0.6 s saving is the same order as the expert's 416 ms here
-(the remainder is likely attention outside Linear calls; not measured). Values are in the normalized action space, before the
+(the remainder is likely attention outside Linear calls; not measured).
+
+Camera count and image size (`edge/cameras_tradeoff.py`, one loaded model, variants
+interleaved, n = 8 each; 'change' = max difference from the 3-camera 512 px chunk):
+
+| input | p50 (min-max) per chunk | change |
+|---|---|---|
+| 3 cameras, 512 px | 3,020 ms (2,568-3,084) | 0 |
+| 2 cameras, 512 px | 2,208 ms (1,883-2,511) | 0.47 |
+| 1 camera, 512 px | 1,360 ms (1,187-1,405) | 0.63 |
+| 3 cameras, 256 px | 1,107 ms (975-1,215) | 0.92 |
+
+Time scales with pixels: about 0.83 s per 512 px camera, so one camera or 256 px
+images both fit the 2.5 s chunk in FP32. The change column is not an error: the
+pretrained model was trained at 512 px and sees different input, so either option
+needs a fine-tune on that input before its success can be judged (the export's
+preprocessor resizes to 512 px by default, so 256 px also means changing it). Values are in the normalized action space, before the
 postprocessor. One chunk covers 50 control steps = 2.5 s at the simulator's
 20 Hz (`so_arm100_sim.env.CONTROL_HZ`), so a 3.1 s chunk is 1.24x too slow for
 real time on this CPU: the arm would stall between chunks. INT8 weights at 1.3 s
