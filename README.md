@@ -297,7 +297,22 @@ n = 10 per row, error against the default 10-step chunk on the same 3 inputs, wh
 
 Time stays at 2.8-3.1 s from 1 to 10 steps while the output changes, which points to
 the shared prefix (3 images through the vision encoder plus the language model), not the
-denoising loop, as where the time goes. Not profiled per layer yet. Values are in the normalized action space, before the
+denoising loop, as where the time goes.
+
+Per stage (`edge/profile_stages.py`, wall time inside every `nn.Linear` call summed by
+owner, n = 5 chunks; the hooks themselves raise the chunk to 3,444 ms p50):
+
+| stage | ms per chunk | share |
+|---|---|---|
+| vision encoder (3 cameras, 512x512) | 1,521 | 48 % |
+| action expert (all 10 steps) | 416 | 13 % |
+| VLM text layers | 218 | 7 % |
+| connector + other | 21 | 1 % |
+| outside Linear calls (attention, norms, resize) | 987 | 31 % |
+
+The vision encoder is the lever: fewer cameras or a smaller input size, not fewer
+steps. Open question: 416 ms for 10 expert steps predicts about 0.37 s saved at 1 step,
+which the step table above does not show (its rows are separate runs, n = 10). Values are in the normalized action space, before the
 postprocessor. One chunk covers 50 control steps = 2.5 s at the simulator's
 20 Hz (`so_arm100_sim.env.CONTROL_HZ`), so a 3.1 s chunk is 1.24x too slow for
 real time on this CPU: the arm would stall between chunks. INT8 weights at 1.3 s
