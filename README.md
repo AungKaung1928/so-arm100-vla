@@ -330,7 +330,25 @@ Time scales with pixels: about 0.83 s per 512 px camera, so one camera or 256 px
 images both fit the 2.5 s chunk in FP32. The change column is not an error: the
 pretrained model was trained at 512 px and sees different input, so either option
 needs a fine-tune on that input before its success can be judged (the export's
-preprocessor resizes to 512 px by default, so 256 px also means changing it). Values are in the normalized action space, before the
+preprocessor resizes to 512 px by default, so 256 px also means changing it).
+
+Combined, 1 camera at 512 px (`edge/combo_1cam.py`: OpenVINO re-exported with a
+1-camera input, since its shapes are fixed at export; the three backends interleaved
+in one process, n = 20 each, same input):
+
+| backend, 1 camera | p50 / p99 per chunk | max \|out - PyTorch\| |
+|---|---|---|
+| PyTorch FP32 | 1,848 / 2,039 ms | 0 |
+| OpenVINO FP32 | 1,398 / 1,656 ms | 2.1e-6 |
+| OpenVINO INT8 weights | 733 / 937 ms | 0.093 |
+
+Interleaved, OpenVINO FP32 is 24 % faster than PyTorch here; the 3-camera FP32 rows
+above (no gain) ran the two backends one after the other, not interleaved, so that
+comparison is weaker. The same PyTorch 1-camera input took 1,360 ms p50 in the
+camera run and 1,848 ms here: absolute times move between processes by about that
+much, so compare within one table only. INT8 weights at 1 camera use 29 % of the
+2.5 s chunk at p99, the only setup here with real margin, still with the accuracy
+question open. Values are in the normalized action space, before the
 postprocessor. One chunk covers 50 control steps = 2.5 s at the simulator's
 20 Hz (`so_arm100_sim.env.CONTROL_HZ`), so a 3.1 s chunk is 1.24x too slow for
 real time on this CPU: the arm would stall between chunks. INT8 weights at 1.3 s
