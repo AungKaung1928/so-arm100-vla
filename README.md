@@ -284,7 +284,7 @@ two different inputs' chunks (0.13-0.19), so INT8 is not shown to be safe: that
 needs closed-loop success on a fine-tuned checkpoint (smolvla_base itself scores 0.00
 on all four tasks here, so its success cannot show a drop).
 
-Fewer denoising steps do not help either (`edge/steps_tradeoff.py`, PyTorch FP32, 4 threads,
+Fewer denoising steps, accuracy side (`edge/steps_tradeoff.py`, PyTorch FP32, 4 threads,
 n = 10 per row, error against the default 10-step chunk on the same 3 inputs, whose
 10-step chunks differ from each other by up to 0.26):
 
@@ -295,9 +295,11 @@ n = 10 per row, error against the default 10-step chunk on the same 3 inputs, wh
 | 2 | 0.407 / 0.121 | 2,827 / 2,990 ms |
 | 1 | 0.715 / 0.200 | 3,096 / 3,414 ms |
 
-Time stays at 2.8-3.1 s from 1 to 10 steps while the output changes, which points to
-the shared prefix (3 images through the vision encoder plus the language model), not the
-denoising loop, as where the time goes.
+The times in that table come from separate model loads and are too noisy to compare.
+`edge/steps_interleaved.py` switches one loaded model between 10 and 1 steps on
+alternating calls (n = 10 each): 10 steps 3,196 ms p50 (2,524-3,400), 1 step 2,573 ms
+(2,006-2,915), so dropping to one step saves about 0.6 s (19 %) at an error of 0.5 to
+0.7. Most of the chunk is the shared prefix, which the steps do not touch.
 
 Per stage (`edge/profile_stages.py`, wall time inside every `nn.Linear` call summed by
 owner, n = 5 chunks; the hooks themselves raise the chunk to 3,444 ms p50):
@@ -311,8 +313,8 @@ owner, n = 5 chunks; the hooks themselves raise the chunk to 3,444 ms p50):
 | outside Linear calls (attention, norms, resize) | 987 | 31 % |
 
 The vision encoder is the lever: fewer cameras or a smaller input size, not fewer
-steps. Open question: 416 ms for 10 expert steps predicts about 0.37 s saved at 1 step,
-which the step table above does not show (its rows are separate runs, n = 10). Values are in the normalized action space, before the
+steps. The interleaved 0.6 s saving is the same order as the expert's 416 ms here
+(the rest is attention outside Linear calls). Values are in the normalized action space, before the
 postprocessor. One chunk covers 50 control steps = 2.5 s at the simulator's
 20 Hz (`so_arm100_sim.env.CONTROL_HZ`), so a 3.1 s chunk is 1.24x too slow for
 real time on this CPU: the arm would stall between chunks. INT8 weights at 1.3 s
