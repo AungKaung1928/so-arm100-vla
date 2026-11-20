@@ -277,8 +277,10 @@ PyTorch and to the compiled OpenVINO model, both on 4 threads. Measured
 | OpenVINO INT8 weights (`edge/int8_ov.py`, `nncf.compress_weights` defaults, nncf 3.4.0), n = 30 | 1,295 / 1,476 ms |
 | max \|PyTorch - OpenVINO INT8\| over one chunk, 3 inputs | 0.073-0.160 (mean 0.023-0.048) |
 
-Same numbers within 2 % at p50: in FP32 the backend change buys nothing on this
-CPU. INT8 weight compression does: weights 1.57 → 0.40 GB, p50 2.4x faster. But
+Those two FP32 rows ran one after the other and look equal; interleaved call by call
+in one process (`edge/fp32_interleaved.py`, n = 20 each, same input) OpenVINO FP32 is
+3,008 / 3,221 ms p50 / p99 against PyTorch's 3,770 / 4,046 ms, 20 % faster (parity
+2.4e-6). INT8 weight compression goes further: weights 1.57 → 0.40 GB, p50 2.4x faster. But
 its error against PyTorch (up to 0.16) is the same size as the difference between
 two different inputs' chunks (0.13-0.19), so INT8 is not shown to be safe: that
 needs closed-loop success on a fine-tuned checkpoint (smolvla_base itself scores 0.00
@@ -342,9 +344,7 @@ in one process, n = 20 each, same input):
 | OpenVINO FP32 | 1,398 / 1,656 ms | 2.1e-6 |
 | OpenVINO INT8 weights | 733 / 937 ms | 0.093 |
 
-Interleaved, OpenVINO FP32 is 24 % faster than PyTorch here; the 3-camera FP32 rows
-above (no gain) ran the two backends one after the other, not interleaved, so that
-comparison is weaker. The same PyTorch 1-camera input took 1,360 ms p50 in the
+Interleaved, OpenVINO FP32 is 24 % faster than PyTorch here (20 % at 3 cameras). The same PyTorch 1-camera input took 1,360 ms p50 in the
 camera run and 1,848 ms here: absolute times move between processes by about that
 much, so compare within one table only. INT8 weights at 1 camera use 29 % (p50) to 37 % (p99) of the
 2.5 s chunk, the only setup here with real margin, still with the accuracy
