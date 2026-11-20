@@ -346,8 +346,8 @@ Interleaved, OpenVINO FP32 is 24 % faster than PyTorch here; the 3-camera FP32 r
 above (no gain) ran the two backends one after the other, not interleaved, so that
 comparison is weaker. The same PyTorch 1-camera input took 1,360 ms p50 in the
 camera run and 1,848 ms here: absolute times move between processes by about that
-much, so compare within one table only. INT8 weights at 1 camera use 29 % of the
-2.5 s chunk at p99, the only setup here with real margin, still with the accuracy
+much, so compare within one table only. INT8 weights at 1 camera use 29 % (p50) to 37 % (p99) of the
+2.5 s chunk, the only setup here with real margin, still with the accuracy
 question open. Values are in the normalized action space, before the
 postprocessor. One chunk covers 50 control steps = 2.5 s at the simulator's
 20 Hz (`so_arm100_sim.env.CONTROL_HZ`), so a 3.1 s chunk is 1.24x too slow for
