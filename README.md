@@ -60,7 +60,7 @@ flowchart LR
 - **The policy barely works, and the data is why.** Seen 0.110, paraphrase 0.097, combo 0.027, with reach at about a quarter and push, lift and pick_place at 0–7%; the final-epoch L1 is 0.128 on held-out demonstration episodes against 0.057 on training ones from 162 episodes, so it fits what it saw before language even enters, and the next experiment is more demonstrations per pair.
 - **The encoder ablation has no power.** MiniLM 0.110 / 0.097 / 0.027, hashed 0.092 / 0.073 / 0.027 and no-FiLM 0.137 / 0.110 / 0.033 are each inside the others' spread, so the ordering is noise at this success level and the test only becomes informative once the base policy is fixed.
 - **MiniLM is driven by surface words, not by the colour.** "lift the green cube" sits 0.63 from "push the red cube to the target" and 0.82 from "lift the blue cube", but only 0.38 from its own paraphrase "hoist the green block", which is why `paraphrase` is hard and `combo` asks the policy to read colour out of two nearly parallel vectors.
-- **SmolVLA-base zero-shot scores 0 of 40 and costs 3.16 s per chunk.** One 50-step action chunk on 8 CPU threads is 64x the 50 ms control period, so a 500M-parameter VLA is not a real-time controller on CPU whatever its success after fine-tuning; the line is a calibration against a different embodiment, not evidence about SmolVLA.
+- **SmolVLA-base zero-shot scores 0 of 40 and costs 3.16 s per chunk.** One 50-step action chunk on 8 CPU threads is 64x the 50 ms control period, so a 450M-parameter VLA is not a real-time controller on CPU whatever its success after fine-tuning; the line is a calibration against a different embodiment, not evidence about SmolVLA.
 - **The LoRA gate passed at 0.51 s/step but no fine-tune was run.** 2,000 steps would be about 0.3 h, yet the gate timed the language-model half only (no vision tower, no flow-matching head), every policy here is one training seed, and the protocol was cut from 100 to 20 episodes per seed to fit 1.7 h per evaluation.
 
 <details><summary><b>What this is, and what it is not</b></summary>
@@ -210,7 +210,7 @@ shows the observation mapping runs end to end against the real checkpoint,
 and it prices the model on this machine. One 50-step action chunk costs
 3.2 s on 8 CPU threads, which is 64x the 50 ms control period at 20 Hz;
 even with chunking the arm would wait 3 s every 2.5 s of motion. On CPU a
-500M-parameter VLA is not a real-time controller, whatever its success
+450M-parameter VLA is not a real-time controller, whatever its success
 rate after fine-tuning.
 
 Caveats that make this a reference and not a result: different embodiment
