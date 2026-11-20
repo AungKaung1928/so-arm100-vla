@@ -248,7 +248,10 @@ records 20 demonstrations per training pair in the smolvla_base layout
 (`so_arm100_sim.record --smolvla`) and fine-tunes `lerobot/smolvla_base`
 with `lerobot-train`, sizing the step count from a measured 20-step timing
 run. Checked so far: the full path ran 2 steps on the laptop CPU (batch 2,
-4 threads, 75-86 s/step, 100M of 450M parameters trainable). Not checked:
+4 threads, 75-86 s/step, 100M of 450M parameters trainable), and
+`eval_smolvla_ft.py`'s loader and runner ran one `reach:red:distractors` episode
+on a 2-step checkpoint (2026-11-21: 100 steps, 2 chunk computes, 2.38 s p50 per
+50-step chunk on CPU; success 0.00, expected after 2 steps). Not checked:
 anything on the T4. Two caveats on the zero-shot line above: that run fed
 radians and skipped LeRobot's normalizer, and the simulator's Pitch at home
 (-90 deg) sits 4 standard deviations from the released SO-100 action stats.
