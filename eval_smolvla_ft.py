@@ -8,7 +8,7 @@ checkpoint's own LeRobot pre/post processors, so state and actions are
 normalized with the fine-tune dataset's stats. Inputs match `record --smolvla`:
 6-d state and actions in SO-100 units, cameras top/front/side as camera1..3.
 
-CPU inference is about 3 s per 50-step chunk: run it through cpuguard.
+CPU inference is about 3 s per 50-step chunk (edge/ in the README has the measured p50).
 """
 import argparse
 import time
