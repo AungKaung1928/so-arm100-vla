@@ -314,7 +314,7 @@ owner, n = 5 chunks; the hooks themselves raise the chunk to 3,444 ms p50):
 
 The vision encoder is the lever: fewer cameras or a smaller input size, not fewer
 steps. The interleaved 0.6 s saving is the same order as the expert's 416 ms here
-(the rest is attention outside Linear calls). Values are in the normalized action space, before the
+(the remainder is likely attention outside Linear calls; not measured). Values are in the normalized action space, before the
 postprocessor. One chunk covers 50 control steps = 2.5 s at the simulator's
 20 Hz (`so_arm100_sim.env.CONTROL_HZ`), so a 3.1 s chunk is 1.24x too slow for
 real time on this CPU: the arm would stall between chunks. INT8 weights at 1.3 s
