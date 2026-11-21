@@ -57,7 +57,8 @@ def gl_ok(backend):
                        capture_output=True, text=True, env=env)
     return r.stdout.strip().endswith("True")
 if not gl_ok("egl"):
-    subprocess.run("apt-get -qq install -y libosmesa6 > /dev/null", shell=True, check=True)
+    subprocess.run("apt-get -qq update && apt-get -qq install -y libosmesa6 > /dev/null",
+                   shell=True, check=True)   # image apt lists may be empty
     os.environ["MUJOCO_GL"] = "osmesa"
 os.environ["PYOPENGL_PLATFORM"] = os.environ["MUJOCO_GL"]
 assert gl_ok(os.environ["MUJOCO_GL"]), "no GL backend"

@@ -113,3 +113,23 @@ def test_timing_cell_falls_back_on_a_failed_batch_and_sizes_the_run(tmp_path):
     assert calls == [32, 16]
     assert (ns["BATCH"], ns["STEPS"]) == (16, 9000)          # 2.5 h at 1.0 s per step
     assert "updt_s" in (tmp_path / "timing.log").read_text()
+
+
+def test_gl_cell_falls_back_to_osmesa_with_fresh_apt_lists(monkeypatch):
+    """EGL fails, OSMesa works: the cell must refresh apt lists before installing."""
+    shell = []
+
+    class Sub:
+        @staticmethod
+        def run(cmd, **kw):
+            if kw.get("shell"):
+                shell.append(cmd)
+                return None
+            ok = kw["env"]["MUJOCO_GL"] == "osmesa"
+            return type("R", (), {"stdout": f"{ok}\n"})()
+
+    src = next("".join(c["source"]) for c in mk.build()["cells"] if "GL check" in "".join(c["source"]))
+    monkeypatch.setenv("MUJOCO_GL", "egl")
+    exec(src, {"os": os, "subprocess": Sub})
+    assert os.environ["MUJOCO_GL"] == "osmesa" and os.environ["PYOPENGL_PLATFORM"] == "osmesa"
+    assert len(shell) == 1 and shell[0].index("apt-get -qq update") < shell[0].index("install -y libosmesa6")
