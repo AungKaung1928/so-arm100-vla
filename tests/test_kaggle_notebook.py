@@ -133,3 +133,12 @@ def test_gl_cell_falls_back_to_osmesa_with_fresh_apt_lists(monkeypatch):
     exec(src, {"os": os, "subprocess": Sub})
     assert os.environ["MUJOCO_GL"] == "osmesa" and os.environ["PYOPENGL_PLATFORM"] == "osmesa"
     assert len(shell) == 1 and shell[0].index("apt-get -qq update") < shell[0].index("install -y libosmesa6")
+
+
+def test_install_cell_pins_the_tested_lerobot_and_real_extras():
+    """The notebook installs the lerobot version these tests run against, with extras it has."""
+    import importlib.metadata as md
+    src = "".join(next(c["source"] for c in mk.build()["cells"] if "uv pip" in "".join(c["source"])))
+    extras, version = re.search(r'"lerobot\[([\w,-]+)\]==([\d.]+)"', src).groups()
+    assert version == md.version("lerobot")
+    assert set(extras.split(",")) <= set(md.metadata("lerobot").get_all("Provides-Extra"))
