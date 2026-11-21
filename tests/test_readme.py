@@ -82,7 +82,7 @@ def test_floor_line():
                                       ("minilm_nofilm", "MiniLM, no FiLM")])
 def test_language_probe_row(tag, name):
     p = run(f"probe_language_{tag}_s0")
-    keys = ("l1_recorded", "l1_wrong_colour", "l1_wrong_task")
+    keys = ("l1_recorded", "l1_wrong_colour", "l1_wrong_task", "l1_other_image")
     cells = " | ".join(f"{p[s][k]:.4f}" for s in ("val", "train") for k in keys)
     assert f"| {name} | {cells} |" in README
     # recorded sentences reproduce the training log's final val L1
