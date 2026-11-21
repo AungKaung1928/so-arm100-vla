@@ -6,8 +6,10 @@
 2. Parses the notebook's lerobot-train arguments with the installed lerobot and validates them
    (reads config.json of lerobot/smolvla_base from the Hub).
 3. Loads one batch and checks the keys and the action chunk shape the policy config asks for.
+4. Checks the recorded image size and camera order against what eval_smolvla_ft.py renders.
 Not covered: the GPU step itself (memory at batch 32, s/step); the notebook measures those.
 """
+import json
 import os
 import subprocess
 import sys
@@ -46,6 +48,8 @@ def main():
     from lerobot.configs import parser
     from lerobot.configs.train import TrainPipelineConfig
     from lerobot.datasets.factory import make_dataset
+    from so_arm100_sim import smolvla_export as SX
+    from so_arm100_vla.data import IMAGE
 
     pinned = next(s for _, s in mk.CELLS if "lerobot[" in s).split("==")[1].split('"')[0]
     assert lerobot.__version__ == pinned, f"installed lerobot {lerobot.__version__}, notebook pins {pinned}"
@@ -56,6 +60,11 @@ def main():
         subprocess.run([sys.executable, "-m", "so_arm100_sim.record", "--root", ds,
                         "--repo-id", "local/sim_smolvla", "--smolvla", "--episodes", "1",
                         "--tasks", pairs[0], pairs[5]], check=True)
+        # what the notebook records must be what eval_smolvla_ft.py renders at test time
+        with open(os.path.join(ds, "recording_log.json")) as f:
+            log = json.load(f)
+        assert log["size"] == [IMAGE["height"], IMAGE["width"]], (log["size"], IMAGE)
+        assert log["cameras"] == list(SX.CAMERA_MAP.values()), log["cameras"]
         cmd = train_command(ds)
         assert cmd[0] == "/venv/bin/lerobot-train", cmd[0]
         sys.argv = ["lerobot-train", *cmd[1:]]
@@ -68,7 +77,8 @@ def main():
             assert not missing, missing
             assert batch["action"].shape[1:] == (cfg.policy.chunk_size, 6), batch["action"].shape
             print(f"preflight ok: lerobot {lerobot.__version__}, {len(cmd) - 1} train arguments parse, "
-                  f"batch keys present, action chunk {tuple(batch['action'].shape[1:])}")
+                  f"batch keys present, action chunk {tuple(batch['action'].shape[1:])}, "
+                  f"images {log['size']} from {log['cameras']} as in the evaluation")
 
         check()
 
