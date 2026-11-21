@@ -89,3 +89,27 @@ def test_zip_cell_packs_the_checkpoint_behind_the_last_symlink(tmp_path):
     assert names == {"train/checkpoints/last/pretrained_model/model.safetensors",
                      "train/checkpoints/last/pretrained_model/config.json",
                      "train/recording_log.json", "train/train.log"}   # no optimizer state
+
+
+def test_timing_cell_falls_back_on_a_failed_batch_and_sizes_the_run(tmp_path):
+    """The whole timing cell with lerobot-train replaced: batch 32 fails, batch 16 logs 1.0 s steps."""
+    calls = []
+
+    class Sub:
+        STDOUT = None
+
+        @staticmethod
+        def run(cmd, stdout, stderr):
+            batch = int(next(a for a in cmd if a.startswith("--batch_size=")).split("=")[1])
+            calls.append(batch)
+            if batch == 32:
+                stdout.write("torch.OutOfMemoryError: CUDA out of memory")
+                return type("R", (), {"returncode": 1})()
+            stdout.write("\n".join(f"step:{i} loss:0.1 updt_s:0.800 data_s:0.200" for i in range(20)))
+            return type("R", (), {"returncode": 0})()
+
+    ns = {"PY": "/venv/bin/python", "DS": "/ds", "TRAIN_HOURS": 2.5, "subprocess": Sub}
+    exec(_train_cell().replace("/kaggle/working", str(tmp_path)).replace("/kaggle/temp", str(tmp_path)), ns)
+    assert calls == [32, 16]
+    assert (ns["BATCH"], ns["STEPS"]) == (16, 9000)          # 2.5 h at 1.0 s per step
+    assert "updt_s" in (tmp_path / "timing.log").read_text()
