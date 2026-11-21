@@ -64,7 +64,7 @@ def test_lora_gate_line():
 
 def test_edge_notes_quote_only_timings_the_readme_states():
     notes = open(os.path.join(ROOT, "edge", "NOTES.md"), encoding="utf-8").read()
-    quoted = set(re.findall(r"\b\d,\d{3} ms", notes))
-    assert len(quoted) >= 10
+    quoted = set(re.findall(r"(?<![\d,])(?:\d,)?\d{3} ms", notes))
+    assert "733 ms" in quoted and "3,770 ms" in quoted
     missing = {q for q in quoted if not re.search(rf"(?<![\d,]){q[:-3]}(?!\d)", README)}
     assert not missing, missing
