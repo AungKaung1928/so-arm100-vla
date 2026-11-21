@@ -61,7 +61,7 @@ python eval_smolvla_ft.py --ckpt runs/kaggle_t4/train/checkpoints/last/pretraine
     --episodes 1 --splits combo --out runs/smolvla_ft_smoke.json         # smallest first
 ```
 
-Evaluation is CPU inference at about 2.4 s per 50-step chunk (measured, README), so the smoke is
+Evaluation is CPU inference at about 3.16 s per 50-step chunk on 8 threads (measured, README), so the smoke is
 1 episode on the held-out pairs; the full table (`--episodes 10`, all splits) takes hours
 at that rate: run it thread-capped and in the background. Label training numbers "Kaggle T4" and evaluation numbers
 with the laptop CPU and thread count.

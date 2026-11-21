@@ -128,3 +128,9 @@ def test_one_episode_smoke_writes_json(downloaded, monkeypatch, tmp_path):
 class _Env:
     def render(self, cam, h, w):
         return np.zeros((h, w, 3), np.uint8)
+
+
+def test_runbook_eval_time_is_the_readme_number():
+    readme = open(os.path.join(HERE, "..", "README.md")).read()
+    s = re.search(r"about ([\d.]+ s) per 50-step chunk", RUNBOOK).group(1)
+    assert s in readme, s
