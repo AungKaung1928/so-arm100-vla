@@ -125,7 +125,9 @@ seeds below is what that costs.
 
 **What this says: the policy barely works.** Reach succeeds about a
 quarter of the time; push, lift and pick-place sit between 0 and 7%, which
-is close to the floor. This is the measured result, not a placeholder. The
+is close to the floor (`eval_floor.py`, a policy that holds its start pose, same
+protocol: 0 of 1,200 episodes; `runs/eval_floor_hold.json`), so every success counted
+here is the policy's. This is the measured result, not a placeholder. The
 training record says why: the final-epoch L1 on held-out demonstration
 episodes is 0.128 against 0.057 on the training ones (`runs/policy_minilm_s0.json`),
 from 162 training episodes, about 20 per (task, colour) pair. The policy

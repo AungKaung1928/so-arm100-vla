@@ -68,3 +68,11 @@ def test_edge_notes_quote_only_timings_the_readme_states():
     assert "733 ms" in quoted and "3,770 ms" in quoted
     missing = {q for q in quoted if not re.search(rf"(?<![\d,]){q[:-3]}(?!\d)", README)}
     assert not missing, missing
+
+
+def test_floor_line():
+    r = run("eval_floor_hold")["splits"]
+    episodes = sum(len(s["cells"]) * s["n_episodes"] * len(s["seeds"]) for s in r.values()
+                   if s["split"] != "paraphrase")        # same pairs as seen: counted once
+    assert all(s["success_rate"] == 0.0 for s in r.values())
+    assert f"0 of {episodes:,} episodes; `runs/eval_floor_hold.json`" in README
