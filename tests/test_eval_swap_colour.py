@@ -1,13 +1,9 @@
 """--swap-colour: the policy is told another cube's colour, success still scores the target."""
-import os
-
 import pytest
 
 pytest.importorskip("torch")
 E = pytest.importorskip("eval_language")
-from so_arm100_vla.policy import load_checkpoint  # noqa: E402
-
-CKPT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "runs", "policy_hash_s0.pt")
+from so_arm100_vla import text as T  # noqa: E402
 
 
 def test_told_colour_cycles_and_is_identity_without_swap():
@@ -25,8 +21,9 @@ def test_eval_split_tells_the_swapped_colour_and_scores_the_target(monkeypatch, 
         return {"success_rate": 0.0, "success_std": 0.0}
 
     monkeypatch.setattr(E, "evaluate", fake_evaluate)
-    model, stats, encoder, _ = load_checkpoint(CKPT)          # hashed encoder: no download
-    r = E.eval_split(model, stats, encoder, "seen", 1, (0,), combos=[("lift", "red")],
+    model = type("StubModel", (), {"k": 10})()                 # only the chunk length is read here
+    encoder = T.make_encoder("hash")                           # no download, no checkpoint
+    r = E.eval_split(model, None, encoder, "seen", 1, (0,), combos=[("lift", "red")],
                      log=lambda *_: None, swap_colour=swap)
     assert seen["task"] == "lift:red:distractors"                         # target unchanged
     told = "green" if swap else "red"
