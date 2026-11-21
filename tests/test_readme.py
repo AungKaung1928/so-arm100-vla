@@ -60,3 +60,11 @@ def test_lora_gate_line():
                  f"{r['params_trainable'] / 1e6:.2f}M trainable ({share:.2f}%)",
                  f"batch 1, seq {r['seq']}, {r['threads']} threads"):
         assert want in line, want
+
+
+def test_edge_notes_quote_only_timings_the_readme_states():
+    notes = open(os.path.join(ROOT, "edge", "NOTES.md"), encoding="utf-8").read()
+    quoted = set(re.findall(r"\b\d,\d{3} ms", notes))
+    assert len(quoted) >= 10
+    missing = {q for q in quoted if not re.search(rf"(?<![\d,]){q[:-3]}(?!\d)", README)}
+    assert not missing, missing
