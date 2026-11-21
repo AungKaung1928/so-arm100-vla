@@ -69,3 +69,23 @@ def test_only_the_zip_and_logs_land_in_the_saved_output_folder():
 def test_committed_notebook_is_the_generated_one():
     with open(os.path.join(HERE, "..", "kaggle", "smolvla_finetune.ipynb")) as f:
         assert json.load(f) == mk.build()
+
+
+def test_zip_cell_packs_the_checkpoint_behind_the_last_symlink(tmp_path):
+    import zipfile
+    out, ds, work = tmp_path / "train", tmp_path / "ds", tmp_path / "working"
+    model = out / "checkpoints" / "000020" / "pretrained_model"
+    model.mkdir(parents=True)
+    (model / "model.safetensors").write_bytes(b"w" * 10)
+    (model / "config.json").write_text("{}")
+    (out / "checkpoints" / "000020" / "training_state").mkdir()
+    (out / "checkpoints" / "000020" / "training_state" / "optimizer.safetensors").write_bytes(b"o")
+    (out / "checkpoints" / "last").symlink_to("000020")          # as lerobot's update_last_checkpoint
+    ds.mkdir(); (ds / "recording_log.json").write_text("{}")
+    work.mkdir(); (work / "train.log").write_text("step:1")
+    src = next("".join(c["source"]) for c in mk.build()["cells"] if "zipfile" in "".join(c["source"]))
+    exec(src.replace("/kaggle/working", str(work)), {"os": os, "OUT": str(out), "DS": str(ds)})
+    names = set(zipfile.ZipFile(work / "smolvla_sim.zip").namelist())
+    assert names == {"train/checkpoints/last/pretrained_model/model.safetensors",
+                     "train/checkpoints/last/pretrained_model/config.json",
+                     "train/recording_log.json", "train/train.log"}   # no optimizer state

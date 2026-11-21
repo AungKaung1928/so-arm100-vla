@@ -102,15 +102,20 @@ rc, log = train(STEPS, BATCH, OUT, "/kaggle/working/train.log",
                 [f"--save_freq={max(STEPS // 5, 100)}", "--log_freq=50"])
 print(rc, log[-1500:])
 assert rc == 0, "training failed: read /kaggle/working/train.log\""""),
-    ("code", """%%bash
-set -e
-cd /kaggle/temp
-cp data/sim_smolvla/recording_log.json /kaggle/working/train.log train/
-rm -f /kaggle/working/smolvla_sim.zip
-# weights + processors only; optimizer state stays on Kaggle. zip follows the `last` symlink.
-zip -qr /kaggle/working/smolvla_sim.zip train/checkpoints/last/pretrained_model train/recording_log.json train/train.log
-unzip -l /kaggle/working/smolvla_sim.zip | grep -q model.safetensors
-ls -la /kaggle/working/smolvla_sim.zip"""),
+    ("code", """import zipfile
+# Weights + processors only (optimizer state stays on Kaggle). `last` is a symlink: resolve it.
+SRC = os.path.realpath(OUT + "/checkpoints/last/pretrained_model")
+ZIP = "/kaggle/working/smolvla_sim.zip"
+with zipfile.ZipFile(ZIP, "w", zipfile.ZIP_STORED) as z:   # float weights do not compress
+    for root, _, files in os.walk(SRC):
+        for name in files:
+            path = os.path.join(root, name)
+            z.write(path, os.path.join("train/checkpoints/last/pretrained_model", os.path.relpath(path, SRC)))
+    z.write(DS + "/recording_log.json", "train/recording_log.json")
+    z.write("/kaggle/working/train.log", "train/train.log")
+names = zipfile.ZipFile(ZIP).namelist()
+assert "train/checkpoints/last/pretrained_model/model.safetensors" in names, names
+print(len(names), "files,", os.path.getsize(ZIP) // 2**20, "MB ->", ZIP)"""),
 ]
 
 
