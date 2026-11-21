@@ -264,6 +264,12 @@ the language-model half only: the real SmolVLA action expert adds a vision
 tower and a flow-matching head that were not timed, and a GO here says a
 fine-tune is affordable to *try*, not that it would help. A NO-GO would have
 dropped the fine-tune from the project; it did not lower the bar.
+The gate's shape is not the model the Kaggle notebook fine-tunes. SmolVLA-base
+is built on SmolVLM2-500M (text model hidden 960, 15 heads with 5 key/value heads,
+MLP 2560, 16 of its 32 layers kept) and its default recipe trains the action expert
+only, with no LoRA (`vlm_model_name`, `num_vlm_layers: 16`, `train_expert_only: true`
+in the `lerobot/smolvla_base` config.json). The gate was measured before SmolVLA was
+chosen; it is kept as the CPU-feasibility record, not as a timing for that run.
 
 ### Fine-tune on a Kaggle T4 (prepared, not run yet)
 
