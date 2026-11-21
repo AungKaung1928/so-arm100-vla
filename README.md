@@ -270,7 +270,12 @@ A fine-tune replaces those stats with the dataset's own, so neither carries over
 1.57 GB weights file plus an OpenVINO tokenizer. `edge/parity_time.py` feeds the
 same preprocessed inputs (3 cameras at 512x512, 6-d state, 48 prompt tokens) to
 PyTorch and to the compiled OpenVINO model, both on 4 threads. Measured
-2026-11-21 on an Intel Core Ultra 5 225H in WSL2 (4 vCPUs visible), not a Jetson:
+2026-11-21 on an Intel Core Ultra 5 225H in WSL2 (4 vCPUs visible), not a Jetson.
+The raw output of the edge runs was not kept, so unlike the tables above no
+`runs/*.json` backs this section and no test checks it; the commit that added each table
+names its headline number (`git log -- edge/`).
+`edge/combo_1cam.py` and `edge/fp32_interleaved.py` take an optional JSON path
+as their third argument for the next run.
 
 | | value |
 |---|---|
