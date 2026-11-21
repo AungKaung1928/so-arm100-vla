@@ -46,6 +46,31 @@ cat <<'MSG'
     python eval_language.py --ckpt runs/policy_hash_s0.pt   --episodes 100 --seeds 5
 MSG
 
+hr "3b  floor and language probe, rerun against the tracked JSON"
+# The hold-still floor needs only the simulator (~90 s, one core). The probe needs the
+# recorded demonstrations (data/multitask, ~20 s); without them it is skipped.
+"$PY" eval_floor.py --out out/verify_floor.json > /dev/null || exit 1
+"$PY" - <<'PY' || exit 1
+import json, sys
+new, old = (json.load(open(p))["splits"] for p in ("out/verify_floor.json", "runs/eval_floor_hold.json"))
+bad = [f"{s}/{c}" for s in old for c in old[s]["cells"]
+       if new[s]["cells"][c]["success_rate"] != old[s]["cells"][c]["success_rate"]]
+print("floor vs runs/eval_floor_hold.json:", "MISMATCH " + ", ".join(bad) if bad else "match")
+sys.exit(1 if bad else 0)
+PY
+if [ -f data/multitask/flat.npz ]; then
+  "$PY" probe_language.py --ckpt runs/policy_minilm_s0.pt --out out/verify_probe.json > /dev/null || exit 1
+  "$PY" - <<'PY' || exit 1
+import json, sys
+new, old = (json.load(open(p)) for p in ("out/verify_probe.json", "runs/probe_language_minilm_s0.json"))
+ok = all(new[s] == old[s] for s in ("val", "train"))
+print("probe vs runs/probe_language_minilm_s0.json:", "match" if ok else "MISMATCH")
+sys.exit(0 if ok else 1)
+PY
+else
+  echo "probe skipped: no data/multitask (record it with step 2)"
+fi
+
 hr "4/4  references and gates"
 cat <<'MSG'
 SmolVLA-base zero-shot (downloads ~1 GB once, about 2 s per control step):
@@ -58,5 +83,5 @@ LoRA compute gate (8 threads, one measurement, under a minute):
     OMP_NUM_THREADS=8 nice -n 10 python lora_gate.py
 MSG
 if [ -f runs/lora_gate.json ]; then
-  "$PY" -c 'import json; b=json.load(open("runs/lora_gate.json")); print(f"\nlast gate: {b[\"step_s_best\"]:.2f} s/step on {b[\"threads\"]} threads -> {b[\"verdict\"]}")'
+  "$PY" -c 'import json; b = json.load(open("runs/lora_gate.json")); print("\nlast gate: %.2f s/step on %s threads -> %s" % (b["step_s_best"], b["threads"], b["verdict"]))'
 fi
