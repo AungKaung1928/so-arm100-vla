@@ -154,7 +154,8 @@ episodes they memorised, which is the near-zero `combo` result seen from the ins
 policies run mostly on joint state and the task word. With 18 held-out episodes the 95 %
 bootstrap interval over episodes (`ci95_change_*` in the JSON) includes zero for the wrong
 colour and the other image in all three policies, and excludes it for the wrong task. Offline
-L1 is not success rate: the closed-loop wrong-instruction run is still to do.
+L1 is not success rate: the closed-loop wrong-instruction run (`eval_language.py --swap-colour`) is
+written and tested but not yet run.
 
 Reference line: the scripted expert that produced the data succeeds at
 roughly 0.9 or better on `lift` and `pick_place`, 0.8-0.9 on `push`, 1.0 on
