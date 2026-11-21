@@ -76,3 +76,14 @@ def test_floor_line():
                    if s["split"] != "paraphrase")        # same pairs as seen: counted once
     assert all(s["success_rate"] == 0.0 for s in r.values())
     assert f"0 of {episodes:,} episodes; `runs/eval_floor_hold.json`" in README
+
+
+@pytest.mark.parametrize("tag,name", [("minilm", "MiniLM, FiLM"), ("hash", "hashed bag-of-words"),
+                                      ("minilm_nofilm", "MiniLM, no FiLM")])
+def test_language_probe_row(tag, name):
+    p = run(f"probe_language_{tag}_s0")
+    keys = ("l1_recorded", "l1_wrong_colour", "l1_wrong_task")
+    cells = " | ".join(f"{p[s][k]:.4f}" for s in ("val", "train") for k in keys)
+    assert f"| {name} | {cells} |" in README
+    # recorded sentences reproduce the training log's final val L1
+    assert abs(p["val"]["l1_recorded"] - run(f"policy_{tag}_s0")["trace"][-1]["val_l1"]) < 1e-4

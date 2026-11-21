@@ -1,0 +1,17 @@
+{
+  "ckpt": "runs/policy_hash_s0.pt",
+  "val": {
+    "episodes": 18,
+    "windows": 1061,
+    "l1_recorded": 0.12787392724245703,
+    "l1_wrong_colour": 0.13051867636726444,
+    "l1_wrong_task": 0.14793461163745075
+  },
+  "train": {
+    "episodes": 162,
+    "windows": 8451,
+    "l1_recorded": 0.05811061237922943,
+    "l1_wrong_colour": 0.06747402389886577,
+    "l1_wrong_task": 0.12896595507288894
+  }
+}

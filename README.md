@@ -135,6 +135,22 @@ fits the demonstrations it saw and does not generalise from them, before
 language even enters. The next experiment is more demonstrations per pair,
 not a different encoder.
 
+Does it read the colour at all? `probe_language.py` re-scores demonstration frames with the
+policy's own masked L1 after swapping the colour word for another cube's, or the sentence for
+another task on the same colour (no simulator, one thread, about 20 s per policy). With the
+recorded sentences it reproduces each training log's final val L1.
+
+| policy | val L1, recorded | wrong colour | wrong task | train L1, recorded | wrong colour | wrong task |
+|---|---|---|---|---|---|---|
+| MiniLM, FiLM | 0.1275 | 0.1286 | 0.1419 | 0.0572 | 0.0681 | 0.1112 |
+| hashed bag-of-words | 0.1279 | 0.1305 | 0.1479 | 0.0581 | 0.0675 | 0.1290 |
+| MiniLM, no FiLM | 0.1306 | 0.1325 | 0.1542 | 0.0557 | 0.0645 | 0.1164 |
+
+On the 18 held-out episodes the wrong colour costs 0.8-2.1 % and the wrong task 11-18 %; on the
+162 training episodes the wrong colour costs 16-19 %. The policies use the colour word only on
+episodes they memorised, which is the near-zero `combo` result seen from the inside. Offline
+L1 is not success rate: the closed-loop wrong-instruction run is still to do.
+
 Reference line: the scripted expert that produced the data succeeds at
 roughly 0.9 or better on `lift` and `pick_place`, 0.8-0.9 on `push`, 1.0 on
 `reach` in the bench's development readings; its measured table lives in

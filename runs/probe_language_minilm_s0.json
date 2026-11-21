@@ -1,0 +1,17 @@
+{
+  "ckpt": "runs/policy_minilm_s0.pt",
+  "val": {
+    "episodes": 18,
+    "windows": 1061,
+    "l1_recorded": 0.127548905024542,
+    "l1_wrong_colour": 0.12860543750626766,
+    "l1_wrong_task": 0.14190368757396235
+  },
+  "train": {
+    "episodes": 162,
+    "windows": 8451,
+    "l1_recorded": 0.05715525175072628,
+    "l1_wrong_colour": 0.06808198626796644,
+    "l1_wrong_task": 0.11124063727630269
+  }
+}
