@@ -251,8 +251,11 @@ run. Checked so far: the full path ran 2 steps on the laptop CPU (batch 2,
 4 threads, 75-86 s/step, 100M of 450M parameters trainable), and
 `eval_smolvla_ft.py`'s loader and runner ran one `reach:red:distractors` episode
 on a 2-step checkpoint (2026-11-21: 100 steps, 2 chunk computes, 2.38 s p50 per
-50-step chunk on CPU; success 0.00, expected after 2 steps). Not checked:
-anything on the T4. Two caveats on the zero-shot line above: that run fed
+50-step chunk on CPU; success 0.00, expected after 2 steps).
+`kaggle/preflight.py` reruns the notebook's record command (1 episode, 2 pairs),
+parses its `lerobot-train` arguments with lerobot 0.6.1 and loads one batch, in
+under a minute on one core; `kaggle/RUNBOOK.md` has the run steps and the result
+check. Not checked: anything on the T4. Two caveats on the zero-shot line above: that run fed
 radians and skipped LeRobot's normalizer, and the simulator's Pitch at home
 (-90 deg) sits 4 standard deviations from the released SO-100 action stats.
 A fine-tune replaces those stats with the dataset's own, so neither carries over.
