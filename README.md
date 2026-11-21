@@ -151,7 +151,9 @@ On the 18 held-out episodes the wrong colour costs 0.8-2.1 % and the wrong task 
 episodes they memorised, which is the near-zero `combo` result seen from the inside. The image
 (the camera frame of another episode, other cube positions) tells the same story: it costs
 3-4 % on held-out episodes and 118-130 % on training ones. Off the training episodes, the
-policies run mostly on joint state and the task word. Offline
+policies run mostly on joint state and the task word. With 18 held-out episodes the 95 %
+bootstrap interval over episodes (`ci95_change_*` in the JSON) includes zero for the wrong
+colour and the other image in all three policies, and excludes it for the wrong task. Offline
 L1 is not success rate: the closed-loop wrong-instruction run is still to do.
 
 Reference line: the scripted expert that produced the data succeeds at

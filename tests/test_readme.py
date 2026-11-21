@@ -87,3 +87,9 @@ def test_language_probe_row(tag, name):
     assert f"| {name} | {cells} |" in README
     # recorded sentences reproduce the training log's final val L1
     assert abs(p["val"]["l1_recorded"] - run(f"policy_{tag}_s0")["trace"][-1]["val_l1"]) < 1e-4
+    # the README's interval claim: held-out colour/image intervals contain 0, task excludes it
+    v = p["val"]
+    assert v["ci95_change_wrong_colour"][0] < 0 < v["ci95_change_wrong_colour"][1]
+    assert v["ci95_change_other_image"][0] < 0 < v["ci95_change_other_image"][1]
+    assert v["ci95_change_wrong_task"][0] > 0
+    assert "includes zero for the wrong\ncolour and the other image in all three policies, and excludes it for the wrong task" in README

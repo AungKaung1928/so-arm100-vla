@@ -47,17 +47,35 @@ def wrong_task(sentence, rng):
 
 @torch.no_grad()
 def l1(model, ds, encoder, swap=None, rng=None, batch_size=64):   # 64 = train.py's eval batch
-    """Masked L1 over ds; `swap` maps a recorded sentence to the one fed instead."""
+    """Masked L1 over ds (train.py's batch weighting) and, per episode, the summed masked
+    L1 and mask, for the bootstrap. `swap` maps a recorded sentence to the one fed instead."""
     cache = {}
     tot, n = 0.0, 0
+    num, den = {}, {}
     for b in ds.batches(batch_size, shuffle=False):
         img, st, lg, act, mask = to_torch(b)
         if swap is not None:
             fed = [cache.setdefault(s, swap(s, rng)) for s in b["sentence"]]
             lg = torch.as_tensor(np.stack(encoder.embed_all(fed)), dtype=torch.float32)
-        tot += float(LangPolicy.loss(model(img, st, lg), act, mask)) * img.shape[0]
+        pred = model(img, st, lg)
+        tot += float(LangPolicy.loss(pred, act, mask)) * img.shape[0]
         n += img.shape[0]
-    return tot / n
+        per = ((pred - act).abs().mean(-1) * mask).sum(-1).numpy()
+        for e, x, m in zip(b["episode"], per, mask.sum(-1).numpy()):
+            num[int(e)] = num.get(int(e), 0.0) + float(x)
+            den[int(e)] = den.get(int(e), 0.0) + float(m)
+    eps = sorted(num)
+    return tot / n, np.array([num[e] for e in eps]), np.array([den[e] for e in eps])
+
+
+def change_ci(base, cond, n_boot=2000, seed=0):
+    """Relative L1 change cond/base - 1 with a 95 % bootstrap interval over episodes (paired)."""
+    _, bn, bd = base
+    _, cn, cd = cond
+    rng = np.random.default_rng(seed)
+    idx = rng.integers(0, len(bn), size=(n_boot, len(bn)))
+    boot = (cn[idx].sum(1) / cd[idx].sum(1)) / (bn[idx].sum(1) / bd[idx].sum(1)) - 1
+    return [round(float(x), 4) for x in np.percentile(boot, [2.5, 97.5])]
 
 
 class SentenceDataset(ChunkDataset):
@@ -69,6 +87,7 @@ class SentenceDataset(ChunkDataset):
     def window(self, j):
         w = super().window(j)
         w["sentence"] = str(self.flat["tasks"][int(self.idx[j])])
+        w["episode"] = int(self.flat["episode"][int(self.idx[j])])
         if self.image_shift:
             w["image"] = self.flat["images"][int(self.idx[(j + self.image_shift) % self.n])]
         return w
@@ -89,12 +108,15 @@ def main():
     for name, eps in (("val", va_eps), ("train", tr_eps)):
         ds = SentenceDataset(flat, eps, ck["cfg"]["k"], encoder, stats)
         rng = np.random.default_rng(0)
-        res[name] = {"episodes": int(len(eps)), "windows": len(ds),
-                     "l1_recorded": l1(model, ds, encoder),
-                     "l1_wrong_colour": l1(model, ds, encoder, wrong_colour, rng),
-                     "l1_wrong_task": l1(model, ds, encoder, wrong_task, rng)}
+        runs = {"recorded": l1(model, ds, encoder),
+                "wrong_colour": l1(model, ds, encoder, wrong_colour, rng),
+                "wrong_task": l1(model, ds, encoder, wrong_task, rng)}
         ds.image_shift = len(ds) // 2
-        res[name]["l1_other_image"] = l1(model, ds, encoder)
+        runs["other_image"] = l1(model, ds, encoder)
+        res[name] = {"episodes": int(len(eps)), "windows": len(ds),
+                     **{f"l1_{k}": v[0] for k, v in runs.items()},
+                     **{f"ci95_change_{k}": change_ci(runs["recorded"], v)
+                        for k, v in runs.items() if k != "recorded"}}
         print(name, {k: round(v, 4) if isinstance(v, float) else v for k, v in res[name].items()})
     if a.out:
         write_json(a.out, res)

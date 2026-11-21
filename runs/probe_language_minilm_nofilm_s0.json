@@ -6,7 +6,19 @@
     "l1_recorded": 0.13056805342239214,
     "l1_wrong_colour": 0.13251919038839546,
     "l1_wrong_task": 0.15418478293198667,
-    "l1_other_image": 0.13539522849760677
+    "l1_other_image": 0.13539522849760677,
+    "ci95_change_wrong_colour": [
+      -0.0144,
+      0.0479
+    ],
+    "ci95_change_wrong_task": [
+      0.0738,
+      0.3121
+    ],
+    "ci95_change_other_image": [
+      -0.0331,
+      0.1054
+    ]
   },
   "train": {
     "episodes": 162,
@@ -14,6 +26,18 @@
     "l1_recorded": 0.05573487598124996,
     "l1_wrong_colour": 0.06446936754341197,
     "l1_wrong_task": 0.11635849117058408,
-    "l1_other_image": 0.12837214820742002
+    "l1_other_image": 0.12837214820742002,
+    "ci95_change_wrong_colour": [
+      0.1389,
+      0.1803
+    ],
+    "ci95_change_wrong_task": [
+      0.8536,
+      1.2707
+    ],
+    "ci95_change_other_image": [
+      1.2132,
+      1.4022
+    ]
   }
 }
