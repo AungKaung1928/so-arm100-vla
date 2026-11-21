@@ -18,6 +18,8 @@ on an archive of `4f9b6b1` itself.
 
 ## Clicks
 
+0. No Kaggle account yet: register at kaggle.com, then verify a phone number in the account
+   settings. Without it the GPU and Internet options in step 2 stay greyed out. Once per account.
 1. kaggle.com, signed in. **Create -> New Notebook**, then **File -> Import Notebook** and upload
    `kaggle/smolvla_finetune.ipynb`.
 2. Right panel, **Session options**: Accelerator **GPU T4 x2** (one GPU is used), Internet **on**.
