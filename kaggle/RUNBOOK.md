@@ -11,6 +11,10 @@ python kaggle/preflight.py      # Python >= 3.12 with lerobot 0.6.1 and so-arm10
 It records 1 episode for 2 pairs with the notebook's own record command, parses the notebook's
 `lerobot-train` arguments with lerobot 0.6.1, and loads one batch (action chunk 50 x 6).
 It does not load the model: GPU memory at batch 32 and s/step are first measured on Kaggle.
+It uses the installed so-arm100-sim, while the notebook installs commit `4f9b6b1`; the recording path
+(`record.py`, `smolvla_export.py`, `instructions.py`, `expert.py`, `env.py`, `render.py`) has no commit after it
+as of 2026-11-22 (`git log 4f9b6b1..HEAD -- <those files>` is empty), and the same check passed once
+on an archive of `4f9b6b1` itself.
 
 ## Clicks
 
@@ -31,7 +35,7 @@ It does not load the model: GPU memory at batch 32 and s/step are first measured
 | Record 180 episodes (9 pairs x 20) | 45-90 min | laptop: 93 frames in 27 s on one core, CPU only |
 | Timing run, 20 steps | 5-10 min | includes the model download; up to 3 tries (batch 32, 16, 8) |
 | Fine-tune | 2.5 h | fixed by `TRAIN_HOURS`; the step count is sized from the timing run |
-| Zip | 2-5 min | about 1.8 GB (450M float32 parameters) |
+| Zip | 1-3 min | about 1.8 GB (450M float32 parameters), stored without compression |
 
 Total about 4-5 h of the 12 h session limit and of the 30 h weekly GPU quota.
 
