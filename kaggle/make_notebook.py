@@ -14,16 +14,20 @@ COMBOS = " ".join(f"{p}:distractors" for p in (
 
 MD = f"""# SmolVLA-base fine-tune on so-arm100-sim demonstrations (Kaggle T4)
 
-Settings before **Run all**: Accelerator = GPU T4 x1, Internet = on.
+Settings before **Save Version -> Save & Run All (Commit)**: Accelerator = GPU T4 x2 (one GPU is used), Internet = on.
+Steps, expected times and the result check: `kaggle/RUNBOOK.md`.
 
 What runs:
-1. Python 3.12 venv (lerobot needs >= 3.12) with `lerobot[smolvla]==0.6.1` and so-arm100-sim @ `{SIM_REV}`.
+1. Python 3.12 venv (lerobot needs >= 3.12) with `lerobot[smolvla,training]==0.6.1` and so-arm100-sim @ `{SIM_REV}`.
 2. Records 20 successful scripted-expert episodes for each of the 9 training (task, colour) pairs,
    with all three cubes on the table (distractors), in the smolvla_base layout (`record --smolvla`: cameras top/front/side -> camera1..3, 6-d state).
    Held-out pairs lift:blue, push:red, pick_place:green are never recorded.
-3. Timing run: 20 steps, batch 32 -> 16 -> 8 until it fits; prints s/step.
+3. Timing run: 20 steps, batch 32 -> 16 -> 8 until it fits; prints s/step (update + data loading).
 4. Fine-tune from `lerobot/smolvla_base` for as many steps as fit in `TRAIN_HOURS`.
 5. Writes `/kaggle/working/smolvla_sim.zip` (last checkpoint weights + processors, logs). Download it; evaluation runs on the laptop CPU.
+
+The venv, the dataset and the checkpoints live in `/kaggle/temp` (not saved): the saved output folder
+`/kaggle/working` is capped at 20 GB and only needs the zip and `train.log`.
 
 Measured before this notebook (laptop CPU, 4 threads, batch 2): 75-86 s/step, 100M of 450M params trainable.
 No GPU number exists yet: this notebook produces the first one (label results "Kaggle T4")."""
@@ -33,18 +37,20 @@ CELLS = [
 EPISODES_PER_PAIR = 20
 import os, sys, subprocess
 os.environ["MUJOCO_GL"] = "egl"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"   # T4 x2: one process, one GPU
+os.makedirs("/kaggle/temp", exist_ok=True)
 print(sys.version)
 print(subprocess.run(["nvidia-smi", "--query-gpu=name,memory.total", "--format=csv"],
                      capture_output=True, text=True).stdout)"""),
     ("code", f"""%%bash
 set -e
 pip -q install uv
-uv venv -q -p 3.12 /kaggle/working/venv
-uv pip -q install -p /kaggle/working/venv/bin/python "lerobot[smolvla]==0.6.1" \\
+uv venv -q -p 3.12 /kaggle/temp/venv
+uv pip -q install -p /kaggle/temp/venv/bin/python "lerobot[smolvla,training]==0.6.1" \\
   "so-arm100-sim[lerobot] @ git+https://github.com/AungKaung1928/so-arm100-sim@{SIM_REV}"
-/kaggle/working/venv/bin/python -c "import lerobot, so_arm100_sim, torch; print(torch.__version__, torch.cuda.is_available())\""""),
+/kaggle/temp/venv/bin/python -c "import lerobot, so_arm100_sim, torch; print(torch.__version__, torch.cuda.is_available())\""""),
     ("code", """# GL check: EGL first; fall back to OSMesa (apt is fine on Kaggle, not on the laptop)
-PY = "/kaggle/working/venv/bin/python"
+PY = "/kaggle/temp/venv/bin/python"
 def gl_ok(backend):
     env = dict(os.environ, MUJOCO_GL=backend, PYOPENGL_PLATFORM=backend)
     r = subprocess.run([PY, "-c", "from so_arm100_sim import render; print(render.available())"],
@@ -57,7 +63,7 @@ os.environ["PYOPENGL_PLATFORM"] = os.environ["MUJOCO_GL"]
 assert gl_ok(os.environ["MUJOCO_GL"]), "no GL backend"
 print("GL:", os.environ["MUJOCO_GL"])"""),
     ("code", f"""import time
-DS = "/kaggle/working/data/sim_smolvla"
+DS = "/kaggle/temp/data/sim_smolvla"
 t0 = time.time()
 subprocess.run([PY, "-m", "so_arm100_sim.record", "--root", DS, "--repo-id", "local/sim_smolvla",
                 "--smolvla", "--episodes", str(EPISODES_PER_PAIR), "--tasks", *"{COMBOS}".split()],
@@ -65,37 +71,46 @@ subprocess.run([PY, "-m", "so_arm100_sim.record", "--root", DS, "--repo-id", "lo
 print(f"recording wall {{time.time() - t0:.0f}} s")
 print(open(DS + "/recording_log.json").read())"""),
     ("code", """import re, shutil
-def train(steps, batch, out, extra=()):
+def train(steps, batch, out, log, extra=()):
     cmd = [PY.replace("python", "lerobot-train"), "--policy.path=lerobot/smolvla_base",
            "--dataset.repo_id=local/sim_smolvla", f"--dataset.root={DS}",
            "--policy.push_to_hub=false", "--policy.device=cuda", "--wandb.enable=false",
            f"--batch_size={batch}", f"--steps={steps}", f"--output_dir={out}", *extra]
-    return subprocess.run(cmd, capture_output=True, text=True)
+    with open(log, "w") as f:   # on disk while it runs: the log survives a killed session
+        rc = subprocess.run(cmd, stdout=f, stderr=subprocess.STDOUT).returncode
+    return rc, open(log).read()
 
 def s_per_step(log):
-    v = [float(x) for x in re.findall(r"updt_s:([0-9.]+)", log)]
+    # one log line per step (--log_freq=1): wall time of a step = update + wait for the batch
+    v = [float(u) + float(d) for u, d in re.findall(r"updt_s:([0-9.]+) data_s:([0-9.]+)", log)]
     return sum(v[2:]) / len(v[2:]) if len(v) > 2 else float("nan")   # skip warm-up steps
 
 for BATCH in (32, 16, 8):
-    shutil.rmtree("/kaggle/working/timing", ignore_errors=True)
-    r = train(20, BATCH, "/kaggle/working/timing", ["--log_freq=1", "--save_checkpoint=false"])
-    if r.returncode == 0:
+    shutil.rmtree("/kaggle/temp/timing", ignore_errors=True)
+    rc, log = train(20, BATCH, "/kaggle/temp/timing", "/kaggle/working/timing.log",
+                    ["--log_freq=1", "--save_checkpoint=false"])
+    if rc == 0:
         break
-    print(f"batch {BATCH} failed:", r.stderr[-400:])
-SPS = s_per_step(r.stderr + r.stdout)
+    print(f"batch {BATCH} failed:", log[-400:])
+assert rc == 0, "timing run failed at every batch size: read /kaggle/working/timing.log"
+SPS = s_per_step(log)
 STEPS = int(TRAIN_HOURS * 3600 / SPS)
 print(f"Kaggle T4: batch {BATCH}, {SPS:.3f} s/step (mean of steps 3-20) -> {STEPS} steps in {TRAIN_HOURS} h")"""),
-    ("code", """OUT = "/kaggle/working/train"
+    ("code", """OUT = "/kaggle/temp/train"
 shutil.rmtree(OUT, ignore_errors=True)
-r = train(STEPS, BATCH, OUT, [f"--save_freq={max(STEPS // 5, 100)}", "--log_freq=50"])
-open("/kaggle/working/train.log", "w").write(r.stdout + r.stderr)
-print(r.returncode, (r.stdout + r.stderr)[-1500:])"""),
+rc, log = train(STEPS, BATCH, OUT, "/kaggle/working/train.log",
+                [f"--save_freq={max(STEPS // 5, 100)}", "--log_freq=50"])
+print(rc, log[-1500:])
+assert rc == 0, "training failed: read /kaggle/working/train.log\""""),
     ("code", """%%bash
-cd /kaggle/working
-cp data/sim_smolvla/recording_log.json train/ 2>/dev/null || true
-cp train.log train/
-zip -qr smolvla_sim.zip train/checkpoints/last/pretrained_model train/recording_log.json train/train.log  # weights only; optimizer state stays on Kaggle
-ls -la smolvla_sim.zip"""),
+set -e
+cd /kaggle/temp
+cp data/sim_smolvla/recording_log.json /kaggle/working/train.log train/
+rm -f /kaggle/working/smolvla_sim.zip
+# weights + processors only; optimizer state stays on Kaggle. zip follows the `last` symlink.
+zip -qr /kaggle/working/smolvla_sim.zip train/checkpoints/last/pretrained_model train/recording_log.json train/train.log
+unzip -l /kaggle/working/smolvla_sim.zip | grep -q model.safetensors
+ls -la /kaggle/working/smolvla_sim.zip"""),
 ]
 
 
