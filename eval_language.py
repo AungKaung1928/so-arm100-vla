@@ -17,6 +17,7 @@ import numpy as np
 
 from so_arm100_sim.evaluate import evaluate, provenance
 from so_arm100_sim import instructions as I
+from so_arm100_sim import scene
 
 from so_arm100_vla import splits as S
 from so_arm100_vla.data import IMAGE
@@ -36,13 +37,20 @@ def _one_thread():
     torch.set_num_interop_threads(1)
 
 
+def told_colour(color, swap):
+    """The colour the instruction names: the target's own, or with `swap` the next cube colour
+    in a fixed cycle (red -> green -> blue -> red). The success check always uses the target."""
+    c = scene.CUBE_COLORS
+    return c[(c.index(color) + 1) % len(c)] if swap else color
+
+
 def eval_split(model, stats, encoder, split, n_episodes, seeds, physics="nominal",
-               image=IMAGE, log=print, combos=None):
+               image=IMAGE, log=print, combos=None, swap_colour=False):
     tmpl, split_combos = S.split_spec(split)
     combos = split_combos if combos is None else [c for c in split_combos if c in combos]
     cells = {}
     for task, color in combos:
-        sentences = I.instructions(task, color, tmpl)
+        sentences = I.instructions(task, told_colour(color, swap_colour), tmpl)
         used = []
 
         def factory(env, _s=sentences, _u=used):
@@ -52,9 +60,12 @@ def eval_split(model, stats, encoder, split, n_episodes, seeds, physics="nominal
                      physics=physics, env_kwargs={"obs_mode": "proprio", "action_mode": "absolute",
                                                   "image": dict(image)})
         r["sentences_used"] = sorted(set(used))
+        r["told_colour"] = told_colour(color, swap_colour)
         cells[f"{task}:{color}"] = r
         log(f"  {split:10s} {task}:{color:6s} success {r['success_rate']:.2f} +- {r['success_std']:.2f}")
-    return summarise_split(split, tmpl, cells, n_episodes, seeds, physics)
+    r = summarise_split(split, tmpl, cells, n_episodes, seeds, physics)
+    r["swap_colour"] = bool(swap_colour)
+    return r
 
 
 def summarise_split(split, tmpl, cells, n_episodes, seeds, physics):
@@ -70,12 +81,12 @@ def summarise_split(split, tmpl, cells, n_episodes, seeds, physics):
             "cells": cells, **provenance()}
 
 
-def run_cell(ckpt, split, task, color, n_episodes, seeds, physics):
+def run_cell(ckpt, split, task, color, n_episodes, seeds, physics, swap_colour=False):
     """One (split, task, colour) cell in its own process. Each cell seeds its
     own env and sentence draw, so the numbers equal a serial run."""
     model, stats, encoder, _ = load_checkpoint(ckpt)
     r = eval_split(model, stats, encoder, split, n_episodes, seeds, physics,
-                   log=lambda *_: None, combos=[(task, color)])
+                   log=lambda *_: None, combos=[(task, color)], swap_colour=swap_colour)
     return r["cells"][f"{task}:{color}"]
 
 
@@ -99,13 +110,16 @@ def main():
     ap.add_argument("--physics", default="nominal")
     ap.add_argument("--out", default="")
     ap.add_argument("--jobs", type=int, default=1, help="cells evaluated in parallel processes")
+    ap.add_argument("--swap-colour", action="store_true",
+                    help="instruction names another cube's colour; success still scores the target")
     a = ap.parse_args()
     model, stats, encoder, ck = load_checkpoint(a.ckpt)
-    stem = a.out or os.path.join("runs", "eval_" + os.path.splitext(os.path.basename(a.ckpt))[0])
+    stem = a.out or os.path.join("runs", "eval_" + os.path.splitext(os.path.basename(a.ckpt))[0]
+                                 + ("_swapcolour" if a.swap_colour else ""))
     seeds = tuple(range(a.seeds))
     parallel = {}
     if a.jobs > 1:
-        jobs = [(a.ckpt, split, t, c, a.episodes, seeds, a.physics)
+        jobs = [(a.ckpt, split, t, c, a.episodes, seeds, a.physics, a.swap_colour)
                 for split in a.splits for t, c in S.split_spec(split)[1]]
         with mp.get_context("spawn").Pool(min(a.jobs, len(jobs)), initializer=_one_thread) as pool:
             for j, r in zip(jobs, pool.starmap(run_cell, jobs)):
@@ -114,10 +128,12 @@ def main():
     for split in a.splits:
         if a.jobs > 1:
             r = summarise_split(split, S.split_spec(split)[0], parallel[split], a.episodes, seeds, a.physics)
+            r["swap_colour"] = a.swap_colour
             for key, c in r["cells"].items():
                 print(f"  {split:10s} {key:12s} success {c['success_rate']:.2f} +- {c['success_std']:.2f}")
         else:
-            r = eval_split(model, stats, encoder, split, a.episodes, seeds, a.physics)
+            r = eval_split(model, stats, encoder, split, a.episodes, seeds, a.physics,
+                           swap_colour=a.swap_colour)
         r["ckpt"] = a.ckpt
         r["encoder"] = ck["encoder"]
         results[split] = r
