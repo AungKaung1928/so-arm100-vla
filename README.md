@@ -447,6 +447,17 @@ rows, joint order reversed): the published chunk must equal PyTorch's within 1e-
 rad, and an image without joint state, or in `bgr8`, must publish nothing. Not
 tested: a camera driver, a trajectory controller, a real arm.
 
+Closed loop (`cpp/closed_loop.py`, `runs/act_closed_loop.json`): PyTorch and the
+exported graph each drive their own copy of the same seeded `reach:red` episode,
+8 episodes, through `LangRunner` with only the network call swapped. Same outcome
+in 8 of 8 (4 successes each), but the 1e-6 difference does not stay small: the
+executed actions first differ by more than 1e-3 rad after 11-41 steps and by up to
+1.69 rad later in one episode. PyTorch against PyTorch on the same setup
+(`--control`, `runs/act_closed_loop_control.json`) differs by exactly 0, so the
+simulator is deterministic and the growth is the feedback loop amplifying the
+runtime's rounding. A deployed graph has to be judged on outcomes over episodes,
+not on matching trajectories.
+
 </details>
 
 <details><summary><b>What is in the box</b></summary>

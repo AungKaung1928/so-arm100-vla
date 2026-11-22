@@ -129,3 +129,15 @@ def test_cpp_int8_table():
     best = min(x["cpp_step_ms_p50"] for x in r["rows"])
     assert f"saves at most {r['fp32_cpp_step_ms_p50'] - best:.2f} ms" in README
     assert f"by up to {max(x['max_abs_rad'] for x in r['rows']):.2f} rad" in README
+
+
+def test_closed_loop_paragraph():
+    r, c = run("act_closed_loop"), run("act_closed_loop_control")
+    n = r["episodes"]
+    assert n == c["episodes"] == 8 and r["task"] == c["task"] == "reach:red"
+    assert f"Same outcome\nin {r['same_outcome']} of {n} ({r['success_torch']} successes each)" in README
+    assert r["success_torch"] == r["success_onnx"]
+    first = [e["first_step_over_1e-3"] for e in r["per_episode"]]
+    assert None not in first
+    assert f"after {min(first)}-{max(first)} steps and by up to\n{r['max_action_diff']:.2f} rad" in README
+    assert c["max_action_diff"] == 0.0 and "differs by exactly 0" in README

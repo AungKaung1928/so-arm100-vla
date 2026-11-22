@@ -1,0 +1,78 @@
+{
+  "ckpt": "runs/policy_hash_s0.pt",
+  "task": "reach:red",
+  "episodes": 8,
+  "threads": 1,
+  "onnxruntime": "1.30.0",
+  "wall_s": 64.39979693500027,
+  "success_torch": 4,
+  "success_onnx": 4,
+  "same_outcome": 8,
+  "max_action_diff": 1.6873132938345394,
+  "per_episode": [
+    {
+      "seed": 0,
+      "steps_lockstep": 100,
+      "success_torch": false,
+      "success_onnx": false,
+      "max_action_diff": 0.0143844120622727,
+      "first_step_over_1e-3": 14
+    },
+    {
+      "seed": 1,
+      "steps_lockstep": 100,
+      "success_torch": false,
+      "success_onnx": false,
+      "max_action_diff": 0.07178452816371123,
+      "first_step_over_1e-3": 11
+    },
+    {
+      "seed": 2,
+      "steps_lockstep": 95,
+      "success_torch": true,
+      "success_onnx": true,
+      "max_action_diff": 0.0824345793917915,
+      "first_step_over_1e-3": 17
+    },
+    {
+      "seed": 3,
+      "steps_lockstep": 100,
+      "success_torch": false,
+      "success_onnx": false,
+      "max_action_diff": 1.6873132938345394,
+      "first_step_over_1e-3": 17
+    },
+    {
+      "seed": 4,
+      "steps_lockstep": 53,
+      "success_torch": true,
+      "success_onnx": true,
+      "max_action_diff": 0.05886151691251133,
+      "first_step_over_1e-3": 18
+    },
+    {
+      "seed": 5,
+      "steps_lockstep": 97,
+      "success_torch": true,
+      "success_onnx": true,
+      "max_action_diff": 0.022054280080452515,
+      "first_step_over_1e-3": 41
+    },
+    {
+      "seed": 6,
+      "steps_lockstep": 84,
+      "success_torch": true,
+      "success_onnx": true,
+      "max_action_diff": 0.05853548979593515,
+      "first_step_over_1e-3": 11
+    },
+    {
+      "seed": 7,
+      "steps_lockstep": 100,
+      "success_torch": false,
+      "success_onnx": false,
+      "max_action_diff": 0.041938375543367046,
+      "first_step_over_1e-3": 11
+    }
+  ]
+}
