@@ -190,3 +190,10 @@ def test_eval_wall_time_names_its_process_count():
     """1.7 h was measured with --jobs 8 (docs/RESULTS.md command); a bare 1.7 h misleads a one-process run."""
     for line in (l for l in README.splitlines() if re.search(r"1\.7 h(?!our)", l)):
         assert "jobs 8" in line, line
+
+
+def test_diagram_matches_policy_config():
+    cfg = run("policy_minilm_s0")["cfg"]
+    for want in (f"{cfg['n_kp']} keypoints", f"{cfg['d']}-wide transformer", f"{cfg['train_episodes']} training episodes",
+                 f"chunk of {cfg['k']} joint targets"):
+        assert want in README, want
