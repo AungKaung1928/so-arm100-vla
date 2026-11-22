@@ -451,7 +451,7 @@ python eval_language.py --ckpt runs/policy_minilm_s0.pt
 ```
 
 Recording renders every frame in software (about 20 ms at 96x128), so 20
-episodes per combination is roughly ten minutes. Training is CPU-only,
+episodes per combination is roughly 12 minutes (2 per combination: 71 s, 2026-11-23). Training is CPU-only,
 under `nice`, chunked by epochs; the log warns when throughput drops more
 than 20% from the first epochs, which on a laptop is either throttling or
 another process, and the load average says which.

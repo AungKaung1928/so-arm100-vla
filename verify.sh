@@ -29,7 +29,7 @@ hr "2/4  data and training"
 cat <<'MSG'
 Record every training (task, colour) combination, all three cubes on the
 table, 20 successful expert episodes each (about 9 x 20 x 150 frames at
-20 ms/frame of software rendering, ~10 min):
+20 ms/frame of software rendering, ~12 min on one core):
 
     python record_data.py --root data/multitask --episodes 20
 
