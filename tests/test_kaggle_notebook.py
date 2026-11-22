@@ -142,3 +142,24 @@ def test_install_cell_pins_the_tested_lerobot_and_real_extras():
     extras, version = re.search(r'"lerobot\[([\w,-]+)\]==([\d.]+)"', src).groups()
     assert version == md.version("lerobot")
     assert set(extras.split(",")) <= set(md.metadata("lerobot").get_all("Provides-Extra"))
+
+
+def test_preflight_flags_changed_sim_lines_but_not_additions(tmp_path):
+    import subprocess
+    spec = importlib.util.spec_from_file_location("preflight", os.path.join(HERE, "..", "kaggle", "preflight.py"))
+    pf = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(pf)
+    git = lambda *a: subprocess.run(["git", "-C", str(tmp_path), *a], check=True, capture_output=True)
+    git("init", "-q")
+    (tmp_path / "so_arm100_sim").mkdir()
+    f = tmp_path / "so_arm100_sim" / "record.py"
+    f.write_text("SIZE = 96\n")
+    git("add", ".")
+    git("-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", "pin")
+    rev = subprocess.run(["git", "-C", str(tmp_path), "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()
+    assert pf.sim_edits_since(str(tmp_path), rev) == []
+    f.write_text("SIZE = 96\nEXTRA = 1\n")                   # addition only: the pinned code still runs as before
+    assert pf.sim_edits_since(str(tmp_path), rev) == []
+    f.write_text("SIZE = 128\nEXTRA = 1\n")                  # an existing line changed
+    assert pf.sim_edits_since(str(tmp_path), rev) == ["so_arm100_sim/record.py"]
+    assert pf.sim_edits_since(str(tmp_path / "nope"), rev) is None

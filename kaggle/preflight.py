@@ -20,6 +20,18 @@ sys.path.insert(0, HERE)
 import make_notebook as mk  # noqa: E402
 
 
+def sim_edits_since(sim_dir, rev):
+    """Files under so_arm100_sim/ whose existing lines changed since `rev` (working tree included).
+    Kaggle installs so-arm100-sim at `rev`; this check runs whatever is installed here, so it only
+    speaks for `rev` while the local code differs by additions alone. None: not a git checkout."""
+    r = subprocess.run(["git", "-C", sim_dir, "diff", "--numstat", rev, "--", "so_arm100_sim/"],
+                       capture_output=True, text=True)
+    if r.returncode != 0:
+        return None
+    rows = [line.split("\t") for line in r.stdout.splitlines()]
+    return [f for _, deleted, f in rows if deleted != "0"]
+
+
 def train_command(ds):
     """The argv the notebook's train() builds, captured instead of run."""
     src = next(s for _, s in mk.CELLS if "def train(" in s).split("for BATCH")[0]
@@ -51,6 +63,9 @@ def main():
     from so_arm100_sim import smolvla_export as SX
     from so_arm100_vla.data import IMAGE
 
+    import so_arm100_sim
+    edits = sim_edits_since(os.path.dirname(os.path.dirname(so_arm100_sim.__file__)), mk.SIM_REV)
+    assert edits is None or not edits, f"so-arm100-sim here changes {edits} since the notebook's {mk.SIM_REV}"
     pinned = next(s for _, s in mk.CELLS if "lerobot[" in s).split("==")[1].split('"')[0]
     assert lerobot.__version__ == pinned, f"installed lerobot {lerobot.__version__}, notebook pins {pinned}"
 
