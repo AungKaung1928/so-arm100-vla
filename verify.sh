@@ -85,3 +85,20 @@ MSG
 if [ -f runs/lora_gate.json ]; then
   "$PY" -c 'import json; b = json.load(open("runs/lora_gate.json")); print("\nlast gate: %.2f s/step on %s threads -> %s" % (b["step_s_best"], b["threads"], b["verdict"]))'
 fi
+
+hr "4b  the policy step in C++ (ONNX Runtime) and INT8"
+cat <<'MSG'
+Build against ONNX Runtime 1.30.0 (headers + libonnxruntime.so.1, see cpp/ci.sh), then:
+
+    ORT_INCLUDE=... ORT_LIB=... cpp/build.sh
+    python cpp/bench.py --ckpt runs/policy_hash_s0.pt --n 64 --n-time 1000 --rounds 5 --out runs/act_cpp.json
+    python cpp/int8.py --out runs/act_cpp_int8.json
+MSG
+if [ -x cpp/act_ort ] && [ -f runs/policy_hash_s0.pt ] && [ -f data/multitask/flat.npz ]; then
+  # parity only: timings move with the machine and its load
+  "$PY" cpp/bench.py --ckpt runs/policy_hash_s0.pt --n 64 --n-time 100 --rounds 1 \
+    --work out/verify_act --out out/verify_act.json > /dev/null 2>&1 || { echo "C++ step: parity FAILED (out/verify_act.json)"; exit 1; }
+  "$PY" -c 'import json; r = json.load(open("out/verify_act.json")); print("C++ step vs PyTorch: max %.2g rad (tol %g)" % (r["max_abs_cpp_vs_torch"], r["tol"]))'
+else
+  echo "C++ step skipped: needs cpp/act_ort (build above), runs/policy_hash_s0.pt and data/multitask"
+fi
