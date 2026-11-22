@@ -156,3 +156,15 @@ def test_demo_caption_is_the_closed_loop_json():
     assert cl["ckpt"] == "runs/policy_hash_s0.pt" and cl["task"] == "reach:red"
     assert f"It solved {cl['success_torch']} of {cl['episodes']} such episodes" in README
     assert os.path.getsize(os.path.join(ROOT, "docs", "media", "demo.gif")) < 3_000_000
+
+
+def test_smolvla_and_l1_rows():
+    z = run("smolvla_zero_shot")
+    succ = [c["success_rate"] for c in z["cells"].values()]
+    n = sum(c["n_episodes"] * len(c["seeds"]) for c in z["cells"].values())
+    ratio = z["forward_s_p50"] / 0.05                        # 20 Hz control period
+    assert f"{z['forward_s_p50']:.2f} s (p90 {z['forward_s_p90']:.2f} s, n = {z['n_forward']})" in README
+    assert f"0 of {n}" in README and not any(succ)
+    assert f"{ratio:.0f}x the 50 ms control period" in README and "64x" not in README
+    last = run("policy_minilm_s0")["trace"][-1]
+    assert f"| {last['train_l1']:.3f} / {last['val_l1']:.3f} |" in README
