@@ -31,7 +31,7 @@ class ActPolicyNode : public rclcpp::Node {
   void on_joint_state(sensor_msgs::msg::JointState::ConstSharedPtr msg);
   void on_image(sensor_msgs::msg::Image::ConstSharedPtr msg);
   // Fills the 15-d proprio state (qpos, qvel, ee position); false (and a log line) when an
-  // input is missing.
+  // input is missing or non-finite.
   bool build_state(std::array<float, act::kState>& state);
 
   std::vector<std::string> joint_names_;

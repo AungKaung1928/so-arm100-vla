@@ -94,6 +94,11 @@ bool ActPolicyNode::build_state(std::array<float, act::kState>& state) {
     RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 2000, "%s", e.what());
     return false;
   }
+  // joint_state_broadcaster sends NaN for an interface a joint lacks (e.g. no velocity).
+  if (!std::all_of(state.begin(), state.end(), [](float v) { return std::isfinite(v); })) {
+    RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 2000, "non-finite joint state or ee position");
+    return false;
+  }
   return true;
 }
 
@@ -115,6 +120,10 @@ void ActPolicyNode::on_image(sensor_msgs::msg::Image::ConstSharedPtr msg) {
   }
   std::array<float, act::kK * act::kAct> chunk{};
   step_->run(image_.data(), state.data(), lang_.data(), chunk.data());
+  if (!std::all_of(chunk.begin(), chunk.end(), [](float v) { return std::isfinite(v); })) {
+    RCLCPP_ERROR_THROTTLE(get_logger(), *get_clock(), 2000, "policy output non-finite: not published");
+    return;
+  }
 
   trajectory_msgs::msg::JointTrajectory traj;
   traj.header.stamp = msg->header.stamp;

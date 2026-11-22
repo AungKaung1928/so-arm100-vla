@@ -76,14 +76,15 @@ class NodeTest : public ::testing::Test {
   }
 
   // Joint states + ee TF of sample i (joint names shuffled: the node must map by name).
-  void send_state(size_t i) {
+  // nan_velocity: what joint_state_broadcaster sends for a joint without a velocity interface.
+  void send_state(size_t i, bool nan_velocity = false) {
     const float* s = &states_[i * act::kState];
     sensor_msgs::msg::JointState js;
     const std::vector<std::string> names{"Rotation", "Pitch", "Elbow", "Wrist_Pitch", "Wrist_Roll", "Jaw"};
     for (int j = act::kAct - 1; j >= 0; --j) {
       js.name.push_back(names[j]);
       js.position.push_back(s[j]);
-      js.velocity.push_back(s[act::kAct + j]);
+      js.velocity.push_back(nan_velocity ? std::nan("") : s[act::kAct + j]);
     }
     js_pub_->publish(js);
     geometry_msgs::msg::TransformStamped t;
@@ -152,11 +153,20 @@ TEST_F(NodeTest, ChunkMatchesPyTorch) {
   for (int i = 0; i < act::kK; ++i) {
     ASSERT_EQ(tr.points[i].positions.size(), static_cast<size_t>(act::kAct));
     EXPECT_NEAR(rclcpp::Duration(tr.points[i].time_from_start).seconds(), 0.05 * (i + 1), 1e-6);
-    for (int j = 0; j < act::kAct; ++j)
-      max_diff = std::max(max_diff, std::fabs(tr.points[i].positions[j] - ref_[i * act::kAct + j]));
+    for (int j = 0; j < act::kAct; ++j) {
+      const double d = std::fabs(tr.points[i].positions[j] - ref_[i * act::kAct + j]);
+      EXPECT_LT(d, 1e-4) << "point " << i << " joint " << j;  // also fails on NaN
+      max_diff = std::max(max_diff, d);
+    }
   }
   std::printf("max |node - PyTorch| = %.3g rad\n", max_diff);
-  EXPECT_LT(max_diff, 1e-4);
+}
+
+TEST_F(NodeTest, NonFiniteStateNoTrajectory) {
+  for (int k = 0; k < 5; ++k) { send_state(0, true); spin_for(100ms); }
+  EXPECT_FALSE(publish_until_reply(image(0), 2s));
+  for (int k = 0; k < 5; ++k) { send_state(0); spin_for(100ms); }
+  EXPECT_TRUE(publish_until_reply(image(0), 20s));  // same setup, finite state: published
 }
 
 TEST_F(NodeTest, WrongEncodingIgnored) {
