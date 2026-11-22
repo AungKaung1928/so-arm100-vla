@@ -114,3 +114,18 @@ def test_cpp_step_table():
     gap = [x["python_ort_p50"] - x["cpp_p50"] for x in rounds]
     assert f"saves\n{min(gap):.2f}-{max(gap):.2f} ms" in README
     assert f"between\n{span('cpp_p99')} ms in C++" in README
+
+
+def test_cpp_int8_table():
+    r = run("act_cpp_int8")
+    for x in r["rows"]:
+        name = f"{x['calib_frames']}, {'all INT8' if x['variant'] == 'all INT8' else 'output layer fp32'}"
+        assert (f"| {name} | {x['max_abs_rad']:.3f} / {x['mean_abs_rad']:.3f} rad | "
+                f"{x['cpp_step_ms_p50']:.2f} ms |") in README
+    assert f"fp32 took {r['fp32_cpp_step_ms_p50']:.2f} ms in the same run" in README
+    lo, hi = r["calib_norm_action_range"]["32"]
+    assert f"(32 frames: {lo:.2f} to {hi:.2f} normalised; the evaluated chunks reach\n{r['eval_norm_action_range'][1]:.2f})" in README
+    assert hi < r["eval_norm_action_range"][1]          # the clipping the text explains
+    best = min(x["cpp_step_ms_p50"] for x in r["rows"])
+    assert f"saves at most {r['fp32_cpp_step_ms_p50'] - best:.2f} ms" in README
+    assert f"by up to {max(x['max_abs_rad'] for x in r['rows']):.2f} rad" in README

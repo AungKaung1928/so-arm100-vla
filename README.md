@@ -418,6 +418,24 @@ text encoder (one embedding per episode) and the ensembler. p99 moved between
 CI builds the runner against ONNX Runtime 1.30.0 and requires the same parity on
 a seeded random policy (`cpp/ci.sh`).
 
+INT8 is not worth it here (`cpp/int8.py`, ONNX Runtime static QDQ, per-channel
+weights, MinMax calibration on recorded frames disjoint from the 64 evaluated;
+`runs/act_cpp_int8.json`):
+
+| calibration frames, variant | max / mean \|INT8 - PyTorch\| | C++ p50 |
+|---|---|---|
+| 32, all INT8 | 0.479 / 0.012 rad | 0.43 ms |
+| 32, output layer fp32 | 0.230 / 0.011 rad | 0.44 ms |
+| 256, all INT8 | 0.227 / 0.016 rad | 0.43 ms |
+| 256, output layer fp32 | 0.123 / 0.015 rad | 0.40 ms |
+
+fp32 took 0.45 ms in the same run, so INT8 saves at most 0.05 ms on a 1M-parameter
+model at batch 1 and moves single joint targets by up to 0.48 rad. The worst
+errors are output clipping: the quantised output keeps only the range it saw
+in calibration (32 frames: -2.60 to 2.65 normalised; the evaluated chunks reach
+3.27). 256 frames widen the range and halve the max but raise the mean (coarser
+step). The policy stays fp32.
+
 </details>
 
 <details><summary><b>What is in the box</b></summary>
@@ -434,7 +452,7 @@ record_data.py   every training combination, distractors on, successes only
 train.py         final-epoch reporting, checkpoint carries stats + encoder name
 eval_language.py the three splits through the bench protocol, JSON + table
 smolvla_reference.py, lora_gate.py
-cpp/             act_ort.cpp (policy step in C++ ONNX Runtime), bench.py (export, parity, timing)
+cpp/             act_ort.cpp (policy step in C++ ONNX Runtime), bench.py (export, parity, timing), int8.py
 tests/           encoders, splits, windowing, shapes, ensembling, LoRA math,
                  SmolVLA mapping, and an end-to-end record -> train -> eval smoke
 ```

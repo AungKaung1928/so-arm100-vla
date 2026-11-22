@@ -1,0 +1,64 @@
+{
+  "ckpt": "runs/policy_hash_s0.pt",
+  "n_eval": 64,
+  "onnxruntime": "1.30.0",
+  "threads": 1,
+  "quant": "static QDQ, per-channel QInt8 weights, QUInt8 activations, MinMax",
+  "fp32_cpp_step_ms_p50": 0.448,
+  "eval_norm_action_range": [
+    -2.892292022705078,
+    3.272942304611206
+  ],
+  "calib_norm_action_range": {
+    "32": [
+      -2.598646402359009,
+      2.6475558280944824
+    ],
+    "256": [
+      -3.2954518795013428,
+      2.984288215637207
+    ]
+  },
+  "rows": [
+    {
+      "calib_frames": 32,
+      "variant": "all INT8",
+      "max_abs_rad": 0.4793074131011963,
+      "mean_abs_rad": 0.012416943907737732,
+      "p99_abs_rad": 0.06242142990231514,
+      "cpp_max_abs_rad": 0.479,
+      "cpp_step_ms_p50": 0.435,
+      "cpp_step_ms_p99": 0.9481
+    },
+    {
+      "calib_frames": 32,
+      "variant": "head fp32",
+      "max_abs_rad": 0.22981977462768555,
+      "mean_abs_rad": 0.011342178098857403,
+      "p99_abs_rad": 0.0564504899084568,
+      "cpp_max_abs_rad": 0.23,
+      "cpp_step_ms_p50": 0.4363,
+      "cpp_step_ms_p99": 0.8454
+    },
+    {
+      "calib_frames": 256,
+      "variant": "all INT8",
+      "max_abs_rad": 0.22699570655822754,
+      "mean_abs_rad": 0.01619492471218109,
+      "p99_abs_rad": 0.08375725150108337,
+      "cpp_max_abs_rad": 0.227,
+      "cpp_step_ms_p50": 0.4261,
+      "cpp_step_ms_p99": 0.7728
+    },
+    {
+      "calib_frames": 256,
+      "variant": "head fp32",
+      "max_abs_rad": 0.12288451194763184,
+      "mean_abs_rad": 0.015001370571553707,
+      "p99_abs_rad": 0.07732149958610535,
+      "cpp_max_abs_rad": 0.123,
+      "cpp_step_ms_p50": 0.3994,
+      "cpp_step_ms_p99": 0.8847
+    }
+  ]
+}
