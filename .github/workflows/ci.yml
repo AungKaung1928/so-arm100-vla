@@ -41,3 +41,53 @@ jobs:
           pip install "so-arm100-sim @ git+https://github.com/AungKaung1928/so-arm100-sim.git@38569ac2132aaac0a1c61d945f932eb407060b66" numpy==2.2.6 onnxruntime==1.30.0 onnx==1.23.0
           pip install -e . --no-deps
       - run: cpp/ci.sh
+        env:
+          WORK: ${{ runner.temp }}/ort
+      - name: hand the exported graph, its reference chunks and ONNX Runtime to the ROS 2 job
+        run: |
+          w="$RUNNER_TEMP/ort"; d="$RUNNER_TEMP/dist"
+          mkdir -p "$d/ort_lib"
+          cp -r "$w/act" "$d/act"
+          cp -r "$w/ort/include/onnxruntime/core/session" "$d/ort_include"
+          cp -L "$w/lib/libonnxruntime.so.1" "$d/ort_lib/"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: act-ort
+          path: ${{ runner.temp }}/dist
+          retention-days: 3
+
+  ros2:
+    # ROS 2 node (ros2/so_arm100_vla_ros) in the ros:humble container: its published trajectory
+    # must equal the PyTorch chunk of the cpp-ort job's graph (colcon test).
+    needs: cpp-ort
+    runs-on: ubuntu-latest
+    container: ros:humble
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: src/so-arm100-vla
+      - uses: actions/download-artifact@v4
+        with:
+          name: act-ort
+          path: /tmp/act-ort
+      - name: rosdep (build, test)
+        run: |
+          apt-get update
+          rosdep update --rosdistro humble
+          rosdep install --from-paths src/so-arm100-vla/ros2 --ignore-src -y --rosdistro humble \
+            --dependency-types build --dependency-types build_export \
+            --dependency-types buildtool --dependency-types buildtool_export --dependency-types test
+      - name: colcon build
+        run: |
+          source /opt/ros/humble/setup.bash
+          colcon build --base-paths src/so-arm100-vla/ros2 --event-handlers console_direct+ \
+            --cmake-args -DCMAKE_BUILD_TYPE=Release -DORT_INCLUDE=/tmp/act-ort/ort_include \
+            -DORT_LIB=/tmp/act-ort/ort_lib -DACT_TEST_DATA=/tmp/act-ort/act
+      - name: colcon test
+        run: |
+          source /opt/ros/humble/setup.bash
+          colcon test --base-paths src/so-arm100-vla/ros2 --event-handlers console_direct+
+          colcon test-result --verbose

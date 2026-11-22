@@ -1,0 +1,11 @@
+# Paths come from cpp/bench.py (policy.onnx, stats.f32) and an embedded instruction (lang_path,
+# 384 float32 from the Python text encoder the checkpoint was trained with).
+act_policy_node:
+  ros__parameters:
+    model_path: ""
+    stats_path: ""
+    lang_path: ""
+    joint_names: ["Rotation", "Pitch", "Elbow", "Wrist_Pitch", "Wrist_Roll", "Jaw"]
+    base_frame: world
+    ee_frame: ee
+    control_period: 0.05

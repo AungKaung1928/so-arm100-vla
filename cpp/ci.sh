@@ -6,6 +6,7 @@ set -euo pipefail
 here="$(cd "$(dirname "$0")" && pwd)"
 py="${PY:-python}"
 work="${WORK:-$(mktemp -d)}"
+mkdir -p "$work"
 pkg=onnxruntime-cpp-1.30.0-h987d1f6_1_cpu
 sha=6f042fb15ce643fe954c1eefef3bc3c02a2f302a1b2c76d4bbea8eedaca75e3e
 
