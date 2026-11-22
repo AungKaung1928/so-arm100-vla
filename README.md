@@ -436,6 +436,17 @@ in calibration (32 frames: -2.60 to 2.65 normalised; the evaluated chunks reach
 3.27). 256 frames widen the range and halve the max but raise the mean (coarser
 step). The policy stays fp32.
 
+ROS 2 (Humble): `ros2/so_arm100_vla_ros` wraps the same step (`cpp/act_step.hpp`) in a
+node. In: `image` (rgb8, 128x96), `joint_states` (position and velocity, mapped by
+joint name), TF `world` -> `ee` for the end-effector position. Out:
+`joint_trajectory`, the 10-step chunk as a `JointTrajectory` (point i at (i + 1) x
+50 ms), stamped with the image's time. The instruction is a 384-d embedding file
+made once by the Python encoder. CI builds it in the `ros:humble` container and
+feeds the `cpp-ort` job's graph and frames through real topics and TF (padded image
+rows, joint order reversed): the published chunk must equal PyTorch's within 1e-4
+rad, and an image without joint state, or in `bgr8`, must publish nothing. Not
+tested: a camera driver, a trajectory controller, a real arm.
+
 </details>
 
 <details><summary><b>What is in the box</b></summary>
@@ -452,7 +463,8 @@ record_data.py   every training combination, distractors on, successes only
 train.py         final-epoch reporting, checkpoint carries stats + encoder name
 eval_language.py the three splits through the bench protocol, JSON + table
 smolvla_reference.py, lora_gate.py
-cpp/             act_ort.cpp (policy step in C++ ONNX Runtime), bench.py (export, parity, timing), int8.py
+cpp/             act_step.hpp (policy step, C++ ONNX Runtime), act_ort.cpp, bench.py, int8.py
+ros2/            so_arm100_vla_ros: the step as a ROS 2 node, JointTrajectory out
 tests/           encoders, splits, windowing, shapes, ensembling, LoRA math,
                  SmolVLA mapping, and an end-to-end record -> train -> eval smoke
 ```
