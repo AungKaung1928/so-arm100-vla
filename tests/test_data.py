@@ -69,3 +69,16 @@ def test_stats_round_trip():
     assert np.allclose(s.denorm_action(s.norm_action(a)), a)
     s2 = Stats.from_dict(s.to_dict())
     assert np.allclose(s2.action_std, 4.0)
+
+
+def test_window_normalises_state_and_actions_like_inference():
+    # LangRunner feeds stats.norm_state(state) and denormalises the chunk (policy.py);
+    # training must see the same scaling or the policy is trained on one input range
+    # and run on another, which no other test would notice
+    flat = synthetic_flat()
+    stats = Stats(np.full(15, 0.5), np.full(15, 2.0), np.full(6, 3.0), np.full(6, 4.0))
+    ds = ChunkDataset(flat, episodes=np.array([1]), k=2, encoder=T.HashEncoder(), stats=stats)
+    w = ds.window(3)
+    i = int(ds.idx[3])
+    assert np.allclose(w["state"], (flat["states"][i] - 0.5) / 2.0)
+    assert np.allclose(stats.denorm_action(w["actions"]), flat["actions"][i:i + 2])

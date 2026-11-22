@@ -60,3 +60,15 @@ def test_chunk_ensembler_weights_and_averaging():
     assert abs(ens.action()[0] - 41.0) < 1e-12
     ens.push(np.array([[0.0], [0.0], [0.0]]))          # t=3: chunk0 expired
     assert abs(ens.action()[0] - (30 + 200 + 0) / 3) < 1e-12
+
+
+def test_chunk_ensembler_action_weights_newest_most():
+    # the m=0 case above cannot see the weighting direction; with m=1 the newest
+    # chunk (age 0) must get weight 1 and the older one exp(-1), as weights() states
+    ens = ChunkEnsembler(k=3, act_dim=1, m=1.0)
+    ens.push(np.array([[0.0], [2.0], [0.0]]))          # t=0
+    ens.action()
+    ens.push(np.array([[10.0], [0.0], [0.0]]))         # t=1: old chunk age 1 -> 2, new age 0 -> 10
+    w = ChunkEnsembler.weights(2, m=1.0)               # [age 0, age 1]
+    assert abs(ens.action()[0] - (w[0] * 10.0 + w[1] * 2.0)) < 1e-12
+    assert w[0] > w[1]
