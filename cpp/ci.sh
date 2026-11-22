@@ -23,3 +23,9 @@ ln -sf "$lib/libonnxruntime.so.1.30.0" "$work/lib/libonnxruntime.so.1"
 
 ORT_INCLUDE="$work/ort/include/onnxruntime/core/session" ORT_LIB="$work/lib" "$here/build.sh"
 "$py" "$here/bench.py" --synthetic --n 16 --n-time 100 --rounds 1 --work "$work/act"
+# A NaN in the reference must fail parity (std::max used to drop it and report a match).
+nan="$work/act_nan"; rm -rf "$nan"; cp -r "$work/act" "$nan"
+"$py" -c 'import sys, numpy as np; r = np.fromfile(sys.argv[1], np.float32); r[7] = np.nan; r.tofile(sys.argv[1])' "$nan/ref.f32"
+rc=0; "$here/act_ort" "$nan/policy.onnx" "$nan" 5 >/dev/null 2>&1 || rc=$?
+[ "$rc" -eq 1 ] || { echo "act_ort with a NaN in ref.f32: exit $rc, want 1"; exit 1; }
+echo "act_ort fails parity on a NaN reference"
