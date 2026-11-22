@@ -41,7 +41,8 @@ cd so-arm100-vla
 python3 -m venv .venv && . .venv/bin/activate                                  # first time only
 pip install torch==2.11.0 torchvision==0.26.0 --index-url https://download.pytorch.org/whl/cpu   # first time only
 pip install -r requirements.txt && pip install -e .                            # first time only
-./verify.sh   # runs the tests and reruns the cheap checks against runs/*.json; prints the record / train / eval commands
+./verify.sh   # tests, then reruns the cheap checks against runs/*.json ("match"); about 6 min on a laptop CPU
+              # it also prints the record / train / eval commands
 ```
 
 Recording 20 episodes per (task, colour) takes about ten minutes; one evaluation of 20 × 5 episodes per cell takes about 1.7 h. Full commands, Docker and the C++ / ROS 2 builds: [docs/RESULTS.md](docs/RESULTS.md#reproducing).
