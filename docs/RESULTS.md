@@ -15,7 +15,7 @@ Results, the SmolVLA and Kaggle work, edge deployment and limits behind the shor
 | SmolVLA-base, zero-shot | success | 0.00 / 0.00 / 0.00 / 0.00 | 10 episodes per task, 0 of 40 |
 | SmolVLA-base | 50-step chunk inference p50 | 3.16 s (p90 3.30 s, n = 130) | 8 CPU threads; 63x the 50 ms control period |
 | LoRA gate, SmolVLM-256M LM shape | s/step, batch 1, seq 256, 8 threads | **0.51 s, best of 2 → GO** | rule fixed beforehand: GO under 5 s/step; 176.7M stand-in, 0.55M trainable (0.31%) |
-| evaluation | wall per policy | about 1.7 h | 20 × 5; the written protocol of 100 × 5 would have been over 8 h |
+| evaluation | wall per policy | about 1.7 h | 20 × 5, `--jobs 8`; the written protocol of 100 × 5 would have been over 8 h |
 | Docker image | tests inside | 21 passed, 2 skipped | 3.13 GB, built 2026-09-23 |
 
 ### Key points
@@ -24,7 +24,7 @@ Results, the SmolVLA and Kaggle work, edge deployment and limits behind the shor
 - **The encoder ablation has no power.** MiniLM 0.110 / 0.097 / 0.027, hashed 0.092 / 0.073 / 0.027 and no-FiLM 0.137 / 0.110 / 0.033 are each inside the others' spread, so the ordering is noise at this success level and the test only becomes informative once the base policy is fixed.
 - **MiniLM is driven by surface words, not by the colour.** "lift the green cube" sits 0.63 from "push the red cube to the target" and 0.82 from "lift the blue cube", but only 0.38 from its own paraphrase "hoist the green block" and 0.84 from "take the green cube and hold it up", which shares its words; that is why `paraphrase` is hard and `combo` asks the policy to read colour out of two nearly parallel vectors.
 - **SmolVLA-base zero-shot scores 0 of 40 and costs 3.16 s per chunk.** One 50-step action chunk on 8 CPU threads is 63x the 50 ms control period, so a 450M-parameter VLA is not a real-time controller on CPU whatever its success after fine-tuning; the line is a calibration against a different embodiment, not evidence about SmolVLA.
-- **The LoRA gate passed at 0.51 s/step but no fine-tune was run.** 2,000 steps would be about 0.3 h, yet the gate timed the language-model half only (no vision tower, no flow-matching head), every policy here is one training seed, and the protocol was cut from 100 to 20 episodes per seed to fit 1.7 h per evaluation.
+- **The LoRA gate passed at 0.51 s/step but no fine-tune was run.** 2,000 steps would be about 0.3 h, yet the gate timed the language-model half only (no vision tower, no flow-matching head), every policy here is one training seed, and the protocol was cut from 100 to 20 episodes per seed to fit 1.7 h per evaluation (`--jobs 8`).
 
 
 **Status: measured 2026-09-24.** The trained policy is weak (11% on seen
@@ -144,7 +144,7 @@ because the policy, data and seeds are identical.
 
 Success rate, mean ± standard deviation over the 5 evaluation seeds, one
 training seed per encoder (the protocol said three; one training run is
-about four minutes, but each evaluation is 1.7 hours, and three would have
+about four minutes, but each evaluation is 1.7 hours with `--jobs 8`, and three would have
 tripled that). `--no-film` removes the language modulation of the vision
 features, leaving language as a token only.
 

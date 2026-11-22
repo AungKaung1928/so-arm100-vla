@@ -184,3 +184,9 @@ def test_policy_size():
     n = run("policy_minilm_s0")["params"]
     assert f"{n / 1e6:.1f}M param" in README and f"{n:,}" in README
     assert "about 1M" not in README and " 1M-param" not in README
+
+
+def test_eval_wall_time_names_its_process_count():
+    """1.7 h was measured with --jobs 8 (docs/RESULTS.md command); a bare 1.7 h misleads a one-process run."""
+    for line in (l for l in README.splitlines() if re.search(r"1\.7 h(?!our)", l)):
+        assert "jobs 8" in line, line

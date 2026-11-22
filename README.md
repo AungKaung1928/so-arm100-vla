@@ -49,7 +49,7 @@ pip install -r requirements.txt && pip install -e .                            #
               # it also prints the record / train / eval commands
 ```
 
-Recording 20 episodes per (task, colour) takes about 12 minutes on one core (2 per combination took 71 s, 2026-11-23); one evaluation of 20 × 5 episodes per cell takes about 1.7 h. Full commands, Docker and the C++ / ROS 2 builds: [docs/RESULTS.md](docs/RESULTS.md#reproducing).
+Recording 20 episodes per (task, colour) takes about 12 minutes on one core (2 per combination took 71 s, 2026-11-23); one evaluation of 20 × 5 episodes per cell takes about 1.7 h with `--jobs 8` (8 processes; far longer on one). Full commands, Docker and the C++ / ROS 2 builds: [docs/RESULTS.md](docs/RESULTS.md#reproducing).
 
 ## Limits
 
