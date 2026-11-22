@@ -42,8 +42,3 @@ def sentences_for(name, task, color):
 def all_sentences(name):
     tmpl, combos = split_spec(name)
     return [s for _, _, s in I.all_instructions(tmpl, combos)]
-
-
-def training_sentences():
-    """Every sentence the dataset may contain."""
-    return all_sentences("seen")
