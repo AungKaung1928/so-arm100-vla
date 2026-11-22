@@ -53,3 +53,14 @@ def test_minilm_encoder_and_cache(tmp_path):
     enc2 = T.MiniLMEncoder(cache_dir=str(tmp_path))
     v2 = enc2.embed_all(["lift the green cube"])
     assert enc2._model is None and np.allclose(v2[0], v[0])
+
+
+def test_hash_encoder_sees_word_order_and_uses_signed_buckets():
+    e = T.HashEncoder()
+    a, b = e.embed_all(["push the red cube to the blue target", "push the blue cube to the red target"])
+    assert not np.allclose(a, b)          # same bag of words; only the bigrams differ
+    assert (a < 0).any()                  # signed hashing: collisions cancel instead of piling up
+
+
+def test_minilm_cache_key_ignores_case_and_outer_spaces():
+    assert T.MiniLMEncoder.key("Pick up the red cube ") == T.MiniLMEncoder.key("pick up the red cube")
