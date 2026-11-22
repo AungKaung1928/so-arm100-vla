@@ -46,3 +46,27 @@ def test_action_goes_back_to_radians():
     np.testing.assert_allclose(q[:5], np.radians([90.0, -90.0, 0.0, 45.0, 0.0]), atol=1e-6)
     assert q[5] == pytest.approx(SX.JAW_RANGE[1])
     assert len(r.times) == 1 and "observation.images.camera2" in p.seen
+
+
+def test_main_closed_loop_with_stub_policy(tmp_path, monkeypatch):
+    """main() end to end on the real env (3 cameras rendered per step) with the stub in place of
+    the checkpoint: wiring and JSON only, no success rate is meaningful here."""
+    import json
+    import sys
+
+    from so_arm100_sim import render
+    if not render.available():
+        pytest.skip("no offscreen GL context")
+    p = StubPolicy()
+    monkeypatch.setattr(E, "load", lambda ckpt: (p, lambda x: x, lambda a: a))
+    monkeypatch.setattr(E.I, "HELDOUT_COMBOS", [("lift", "blue")])   # one cell keeps it short
+    out = tmp_path / "ft.json"
+    monkeypatch.setattr(sys, "argv", ["eval_smolvla_ft.py", "--ckpt", "stub", "--episodes", "1",
+                                      "--splits", "combo", "--out", str(out)])
+    E.main()
+    r = json.loads(out.read_text())
+    assert list(r["cells"]) == ["combo/lift:blue"]
+    assert all(0.0 <= c["success_rate"] <= 1.0 for c in r["cells"].values())
+    assert r["n_forward"] == 150                 # one forward per control step of a lift episode
+    assert sorted(p.seen) == ["observation.images.camera1", "observation.images.camera2",
+                              "observation.images.camera3", "observation.state", "task"]
