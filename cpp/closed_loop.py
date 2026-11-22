@@ -3,7 +3,8 @@
 Open-loop parity (cpp/bench.py) says one step agrees to ~1e-6 rad. In closed loop each
 policy sees the state its own actions produced, so a small difference can grow. Both runners
 are LangRunner (same sentence draw, same ensembler); only the network call differs. Needs
-cpp/bench.py's work dir (policy.onnx). One core.
+cpp/bench.py's work dir (policy.onnx). One torch and one ORT thread; rendering adds its own
+(8 episodes: 64 s wall).
 
     python cpp/closed_loop.py --episodes 8 --out runs/act_closed_loop.json
     python cpp/closed_loop.py --episodes 8 --control --out runs/act_closed_loop_control.json
