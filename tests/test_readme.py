@@ -9,7 +9,8 @@ import re
 import pytest
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
-README = open(os.path.join(ROOT, "README.md"), encoding="utf-8").read()
+# README.md is the short page; the full write-up it links lives in docs/RESULTS.md.
+README = "".join(open(os.path.join(ROOT, f), encoding="utf-8").read() for f in ("README.md", "docs/RESULTS.md"))
 SPLITS = ("seen", "paraphrase", "combo")
 ROWS = {"minilm": "`LangPolicy`, MiniLM encoder, FiLM", "hash": "`LangPolicy`, hashed bag-of-words encoder",
         "minilm_nofilm": "`LangPolicy`, MiniLM, no FiLM"}

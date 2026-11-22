@@ -131,6 +131,6 @@ class _Env:
 
 
 def test_runbook_eval_time_is_the_readme_number():
-    readme = open(os.path.join(HERE, "..", "README.md")).read()
+    readme = "".join(open(os.path.join(HERE, "..", f)).read() for f in ("README.md", "docs/RESULTS.md"))
     s = re.search(r"about ([\d.]+ s) per 50-step chunk", RUNBOOK).group(1)
     assert s in readme, s
