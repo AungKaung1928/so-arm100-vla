@@ -1,0 +1,65 @@
+{
+  "source": "runs/policy_hash_s0.pt",
+  "n_parity": 64,
+  "n_time": 1000,
+  "rounds": 5,
+  "threads": 1,
+  "onnxruntime": "1.30.0",
+  "torch": "2.11.0+cpu",
+  "cpu": "Intel(R) Core(TM) Ultra 5 225H",
+  "nproc": 14,
+  "loadavg_1m_before": 0.6220703125,
+  "max_abs_python_ort_vs_torch": 1.3113021850585938e-06,
+  "chunk_abs_max": 2.7014074325561523,
+  "loadavg_1m_after": 0.7802734375,
+  "ort_version_cpp": "1.30.0",
+  "max_abs_cpp_vs_torch": 1.31e-06,
+  "step_ms_rounds": [
+    {
+      "torch_p50": 1.2810510000349495,
+      "torch_p99": 2.8997214300227365,
+      "python_ort_p50": 0.41432000000440894,
+      "python_ort_p99": 0.7915948699212547,
+      "cpp_p50": 0.3489,
+      "cpp_p99": 0.9314,
+      "cpp_max_abs_diff": 1.31e-06
+    },
+    {
+      "torch_p50": 1.277812500006803,
+      "torch_p99": 2.7605366499767556,
+      "python_ort_p50": 0.4174484999452943,
+      "python_ort_p99": 0.8482610499584093,
+      "cpp_p50": 0.3501,
+      "cpp_p99": 0.6588,
+      "cpp_max_abs_diff": 1.31e-06
+    },
+    {
+      "torch_p50": 1.2820730000271396,
+      "torch_p99": 2.7832334200422792,
+      "python_ort_p50": 0.4393779999531944,
+      "python_ort_p99": 1.7318402499984131,
+      "cpp_p50": 0.356,
+      "cpp_p99": 1.2449,
+      "cpp_max_abs_diff": 1.31e-06
+    },
+    {
+      "torch_p50": 2.0833355000036136,
+      "torch_p99": 12.42308288991353,
+      "python_ort_p50": 0.44847850000451217,
+      "python_ort_p99": 1.6046800399226409,
+      "cpp_p50": 0.4093,
+      "cpp_p99": 2.2531,
+      "cpp_max_abs_diff": 1.31e-06
+    },
+    {
+      "torch_p50": 2.064947500002745,
+      "torch_p99": 10.963606930021113,
+      "python_ort_p50": 0.5090034999852833,
+      "python_ort_p99": 4.3781689900504235,
+      "cpp_p50": 0.4442,
+      "cpp_p99": 2.7489,
+      "cpp_max_abs_diff": 1.31e-06
+    }
+  ],
+  "tol": 0.0001
+}

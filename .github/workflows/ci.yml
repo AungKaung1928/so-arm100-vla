@@ -24,3 +24,20 @@ jobs:
           pip install -r requirements.txt
       - name: tests (MiniLM download excluded; the runner may be offline)
         run: python -m pytest tests -q --deselect tests/test_text.py::test_minilm_encoder_and_cache
+
+  cpp-ort:
+    # C++ policy step (cpp/act_ort.cpp) against ONNX Runtime 1.30.0 must match PyTorch (cpp/ci.sh).
+    runs-on: ubuntu-latest
+    env:
+      OMP_NUM_THREADS: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install (CPU torch, the simulator without lerobot, no text encoder)
+        run: |
+          pip install torch==2.11.0 --index-url https://download.pytorch.org/whl/cpu
+          pip install "so-arm100-sim @ git+https://github.com/AungKaung1928/so-arm100-sim.git@38569ac2132aaac0a1c61d945f932eb407060b66" numpy==2.2.6 onnxruntime==1.30.0 onnx==1.23.0
+          pip install -e . --no-deps
+      - run: cpp/ci.sh

@@ -392,6 +392,34 @@ postprocessor. One chunk covers 50 control steps = 2.5 s at the simulator's
 real time on this CPU: the arm would stall between chunks. INT8 weights at 1.3 s
 would fit (0.52 of the chunk), if the accuracy holds.
 
+<details><summary><b>The policy step in C++ (ONNX Runtime, 1 thread)</b></summary>
+
+`cpp/act_ort.cpp` runs one `LangRunner.act` step without the ensembler: uint8
+image to [0,1] CHW, state normalised with the checkpoint's stats, the exported
+ONNX graph, chunk denormalised. `cpp/bench.py` exports `runs/policy_hash_s0.pt`
+(opset 17; the hashed-encoder policy, same network as the MiniLM one), takes 64
+recorded frames with their instructions' embeddings, and times the same step in
+PyTorch, Python ONNX Runtime and C++ ONNX Runtime 1.30.0, all on 1 thread,
+alternating over 5 rounds of 1,000 steps (`runs/act_cpp.json`, Intel Core Ultra
+5 225H in WSL2, not a Jetson).
+
+| step, 1 thread | p50, range over 5 rounds |
+|---|---|
+| PyTorch 2.11 eager | 1.28-2.08 ms |
+| Python + ONNX Runtime | 0.41-0.51 ms |
+| C++ + ONNX Runtime | 0.35-0.44 ms |
+
+max \|C++ - PyTorch\| over 64 chunks: 1.3e-06 rad (chunk values up to 2.7 rad).
+The runtime is most of the gain, the language little of it: PyTorch eager to
+ONNX Runtime is 2.9-4.6x per round, Python to C++ on the same runtime saves
+0.04-0.08 ms. Both are far under the 50 ms control period. Outside the step: the
+text encoder (one embedding per episode) and the ensembler. p99 moved between
+0.66-2.75 ms in C++ across rounds with other jobs on the laptop, so no p99 claim.
+CI builds the runner against ONNX Runtime 1.30.0 and requires the same parity on
+a seeded random policy (`cpp/ci.sh`).
+
+</details>
+
 <details><summary><b>What is in the box</b></summary>
 
 ```
@@ -406,6 +434,7 @@ record_data.py   every training combination, distractors on, successes only
 train.py         final-epoch reporting, checkpoint carries stats + encoder name
 eval_language.py the three splits through the bench protocol, JSON + table
 smolvla_reference.py, lora_gate.py
+cpp/             act_ort.cpp (policy step in C++ ONNX Runtime), bench.py (export, parity, timing)
 tests/           encoders, splits, windowing, shapes, ensembling, LoRA math,
                  SmolVLA mapping, and an end-to-end record -> train -> eval smoke
 ```

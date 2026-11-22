@@ -93,3 +93,24 @@ def test_language_probe_row(tag, name):
     assert v["ci95_change_other_image"][0] < 0 < v["ci95_change_other_image"][1]
     assert v["ci95_change_wrong_task"][0] > 0
     assert "includes zero for the wrong\ncolour and the other image in all three policies, and excludes it for the wrong task" in README
+
+
+def test_cpp_step_table():
+    r = run("act_cpp")
+    rounds = r["step_ms_rounds"]
+
+    def span(key, fmt="{:.2f}"):
+        v = [x[key] for x in rounds]
+        return f"{fmt.format(min(v))}-{fmt.format(max(v))}"
+
+    assert r["rounds"] == len(rounds) == 5 and r["n_time"] == 1000 and r["threads"] == 1
+    assert f"| PyTorch 2.11 eager | {span('torch_p50')} ms |" in README
+    assert f"| Python + ONNX Runtime | {span('python_ort_p50')} ms |" in README
+    assert f"| C++ + ONNX Runtime | {span('cpp_p50')} ms |" in README
+    assert f"over {r['n_parity']} chunks: {r["max_abs_cpp_vs_torch"]:.1e}" in README
+    assert r["max_abs_cpp_vs_torch"] <= r["tol"]
+    ratio = [x["torch_p50"] / x["python_ort_p50"] for x in rounds]
+    assert f"ONNX Runtime is {min(ratio):.1f}-{max(ratio):.1f}x per round" in README
+    gap = [x["python_ort_p50"] - x["cpp_p50"] for x in rounds]
+    assert f"saves\n{min(gap):.2f}-{max(gap):.2f} ms" in README
+    assert f"between\n{span('cpp_p99')} ms in C++" in README
