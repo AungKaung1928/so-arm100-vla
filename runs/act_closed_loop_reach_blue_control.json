@@ -1,0 +1,79 @@
+{
+  "ckpt": "runs/policy_hash_s0.pt",
+  "second": "pytorch (control)",
+  "task": "reach:blue",
+  "episodes": 8,
+  "threads": 1,
+  "onnxruntime": "1.30.0",
+  "wall_s": 37.31317066099973,
+  "success_torch": 4,
+  "success_onnx": 4,
+  "same_outcome": 8,
+  "max_action_diff": 0.0,
+  "per_episode": [
+    {
+      "seed": 0,
+      "steps_lockstep": 54,
+      "success_torch": true,
+      "success_onnx": true,
+      "max_action_diff": 0.0,
+      "first_step_over_1e-3": null
+    },
+    {
+      "seed": 1,
+      "steps_lockstep": 100,
+      "success_torch": false,
+      "success_onnx": false,
+      "max_action_diff": 0.0,
+      "first_step_over_1e-3": null
+    },
+    {
+      "seed": 2,
+      "steps_lockstep": 66,
+      "success_torch": true,
+      "success_onnx": true,
+      "max_action_diff": 0.0,
+      "first_step_over_1e-3": null
+    },
+    {
+      "seed": 3,
+      "steps_lockstep": 100,
+      "success_torch": false,
+      "success_onnx": false,
+      "max_action_diff": 0.0,
+      "first_step_over_1e-3": null
+    },
+    {
+      "seed": 4,
+      "steps_lockstep": 9,
+      "success_torch": true,
+      "success_onnx": true,
+      "max_action_diff": 0.0,
+      "first_step_over_1e-3": null
+    },
+    {
+      "seed": 5,
+      "steps_lockstep": 100,
+      "success_torch": false,
+      "success_onnx": false,
+      "max_action_diff": 0.0,
+      "first_step_over_1e-3": null
+    },
+    {
+      "seed": 6,
+      "steps_lockstep": 96,
+      "success_torch": true,
+      "success_onnx": true,
+      "max_action_diff": 0.0,
+      "first_step_over_1e-3": null
+    },
+    {
+      "seed": 7,
+      "steps_lockstep": 100,
+      "success_torch": false,
+      "success_onnx": false,
+      "max_action_diff": 0.0,
+      "first_step_over_1e-3": null
+    }
+  ]
+}

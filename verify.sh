@@ -94,6 +94,7 @@ Build against ONNX Runtime 1.30.0 (headers + libonnxruntime.so.1, see cpp/ci.sh)
     python cpp/bench.py --ckpt runs/policy_hash_s0.pt --n 64 --n-time 1000 --rounds 5 --out runs/act_cpp.json
     python cpp/int8.py --out runs/act_cpp_int8.json
     MUJOCO_GL=egl python cpp/closed_loop.py --episodes 8 [--control] --out runs/act_closed_loop[_control].json
+    MUJOCO_GL=egl python cpp/closed_loop.py --task reach:blue --episodes 8 [--control] --out runs/act_closed_loop_reach_blue[_control].json
 MSG
 if [ -x cpp/act_ort ] && [ -f runs/policy_hash_s0.pt ] && [ -f data/multitask/flat.npz ]; then
   # parity only: timings move with the machine and its load

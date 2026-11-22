@@ -132,12 +132,19 @@ def test_cpp_int8_table():
 
 
 def test_closed_loop_paragraph():
-    r, c = run("act_closed_loop"), run("act_closed_loop_control")
-    n = r["episodes"]
-    assert n == c["episodes"] == 8 and r["task"] == c["task"] == "reach:red"
-    assert f"Same outcome\nin {r['same_outcome']} of {n} ({r['success_torch']} successes each)" in README
-    assert r["success_torch"] == r["success_onnx"]
-    first = [e["first_step_over_1e-3"] for e in r["per_episode"]]
-    assert None not in first
-    assert f"after {min(first)}-{max(first)} steps and by up to\n{r['max_action_diff']:.2f} rad" in README
-    assert c["max_action_diff"] == 0.0 and "differs by exactly 0" in README
+    runs = {"reach:red": "act_closed_loop", "reach:blue": "act_closed_loop_reach_blue"}
+    eps, maxd = [], 0.0
+    for task, name in runs.items():
+        r, c = run(name), run(name + "_control")
+        assert r["task"] == c["task"] == task and r["episodes"] == c["episodes"] == 8
+        assert c["max_action_diff"] == 0.0                     # "differs by exactly 0 on both"
+        eps += r["per_episode"]
+        maxd = max(maxd, r["max_action_diff"])
+    red, blue = run("act_closed_loop"), run("act_closed_loop_reach_blue")
+    assert f"same\noutcome in {red['same_outcome']} of 8, {red['success_torch']} successes each" in README
+    assert red["success_torch"] == red["success_onnx"]
+    assert (f"{blue['same_outcome']} of 8, {blue['success_torch']} successes against "
+            f"{blue['success_onnx']}") in README
+    first = [e["first_step_over_1e-3"] for e in eps if e["first_step_over_1e-3"] is not None]
+    assert f"in {len(first)} of {len(eps)} episodes" in README
+    assert f"after {min(first)}-{max(first)} steps, by up to {maxd:.2f} rad" in README

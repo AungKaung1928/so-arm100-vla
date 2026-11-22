@@ -1,0 +1,79 @@
+{
+  "ckpt": "runs/policy_hash_s0.pt",
+  "second": "out/act_cpp/policy.onnx",
+  "task": "reach:blue",
+  "episodes": 8,
+  "threads": 1,
+  "onnxruntime": "1.30.0",
+  "wall_s": 35.63297793899983,
+  "success_torch": 4,
+  "success_onnx": 3,
+  "same_outcome": 7,
+  "max_action_diff": 0.16143445222376354,
+  "per_episode": [
+    {
+      "seed": 0,
+      "steps_lockstep": 54,
+      "success_torch": true,
+      "success_onnx": true,
+      "max_action_diff": 0.030430658493535767,
+      "first_step_over_1e-3": 19
+    },
+    {
+      "seed": 1,
+      "steps_lockstep": 100,
+      "success_torch": false,
+      "success_onnx": false,
+      "max_action_diff": 0.06150073252671642,
+      "first_step_over_1e-3": 22
+    },
+    {
+      "seed": 2,
+      "steps_lockstep": 66,
+      "success_torch": true,
+      "success_onnx": true,
+      "max_action_diff": 0.023870121912840547,
+      "first_step_over_1e-3": 14
+    },
+    {
+      "seed": 3,
+      "steps_lockstep": 100,
+      "success_torch": false,
+      "success_onnx": false,
+      "max_action_diff": 0.09241155965200368,
+      "first_step_over_1e-3": 6
+    },
+    {
+      "seed": 4,
+      "steps_lockstep": 9,
+      "success_torch": true,
+      "success_onnx": true,
+      "max_action_diff": 0.00089151399542442,
+      "first_step_over_1e-3": null
+    },
+    {
+      "seed": 5,
+      "steps_lockstep": 100,
+      "success_torch": false,
+      "success_onnx": false,
+      "max_action_diff": 0.16143445222376354,
+      "first_step_over_1e-3": 26
+    },
+    {
+      "seed": 6,
+      "steps_lockstep": 96,
+      "success_torch": true,
+      "success_onnx": false,
+      "max_action_diff": 0.01596429595343174,
+      "first_step_over_1e-3": 15
+    },
+    {
+      "seed": 7,
+      "steps_lockstep": 100,
+      "success_torch": false,
+      "success_onnx": false,
+      "max_action_diff": 0.0859790971922682,
+      "first_step_over_1e-3": 24
+    }
+  ]
+}
