@@ -7,6 +7,7 @@
 #include <cmath>
 #include <cstdio>
 #include <fstream>
+#include <functional>
 #include <memory>
 #include <string>
 #include <vector>
@@ -112,11 +113,13 @@ class NodeTest : public ::testing::Test {
     return m;
   }
 
-  // Publishes image i until one trajectory arrives (discovery takes a moment).
+  // Publishes image i until one trajectory arrives (discovery takes a moment); feed_ runs each
+  // round, as a joint driver keeps publishing.
   bool publish_until_reply(const sensor_msgs::msg::Image& m, std::chrono::seconds timeout) {
     const size_t before = got_.size();
     const auto end = std::chrono::steady_clock::now() + timeout;
     while (got_.size() == before && std::chrono::steady_clock::now() < end) {
+      feed_();
       img_pub_->publish(m);
       spin_for(100ms);
     }
@@ -133,6 +136,7 @@ class NodeTest : public ::testing::Test {
   std::vector<trajectory_msgs::msg::JointTrajectory> got_;
   std::vector<uint8_t> imgs_;
   std::vector<float> states_, ref_;
+  std::function<void()> feed_ = [] {};
 };
 
 TEST_F(NodeTest, NoStateNoTrajectory) {
@@ -141,7 +145,7 @@ TEST_F(NodeTest, NoStateNoTrajectory) {
 
 TEST_F(NodeTest, ChunkMatchesPyTorch) {
   // sample 0 only: lang0.f32 is sample 0's instruction
-  for (int k = 0; k < 5; ++k) { send_state(0); spin_for(100ms); }
+  feed_ = [this] { send_state(0); };
   ASSERT_TRUE(publish_until_reply(image(0), 20s));
   const auto& tr = got_.back();
   EXPECT_EQ(tr.header.stamp.sec, 42);
@@ -163,14 +167,23 @@ TEST_F(NodeTest, ChunkMatchesPyTorch) {
 }
 
 TEST_F(NodeTest, NonFiniteStateNoTrajectory) {
-  for (int k = 0; k < 5; ++k) { send_state(0, true); spin_for(100ms); }
+  feed_ = [this] { send_state(0, true); };
   EXPECT_FALSE(publish_until_reply(image(0), 2s));
-  for (int k = 0; k < 5; ++k) { send_state(0); spin_for(100ms); }
+  feed_ = [this] { send_state(0); };
   EXPECT_TRUE(publish_until_reply(image(0), 20s));  // same setup, finite state: published
 }
 
+TEST_F(NodeTest, StaleStateNoTrajectory) {
+  feed_ = [this] { send_state(0); };
+  ASSERT_TRUE(publish_until_reply(image(0), 20s));  // fresh state: published
+  feed_ = [] {};                                    // the joint driver stops (default max age 0.5 s)
+  spin_for(1000ms);
+  got_.clear();
+  EXPECT_FALSE(publish_until_reply(image(0), 2s));
+}
+
 TEST_F(NodeTest, WrongEncodingIgnored) {
-  for (int k = 0; k < 5; ++k) { send_state(0); spin_for(100ms); }
+  feed_ = [this] { send_state(0); };
   EXPECT_FALSE(publish_until_reply(image(0, "bgr8"), 2s));
   EXPECT_TRUE(publish_until_reply(image(0), 20s));  // same setup, right encoding: published
 }

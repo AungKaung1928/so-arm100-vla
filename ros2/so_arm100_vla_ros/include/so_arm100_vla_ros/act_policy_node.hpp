@@ -1,6 +1,7 @@
 // ActPolicyNode: the so-arm100-vla language policy step (act_step.hpp) behind ROS 2 topics.
 //   in:  image (sensor_msgs/Image, rgb8, 128 x 96), joint_states (sensor_msgs/JointState,
-//        position + velocity of the 6 joints in `joint_names`), TF base_frame -> ee_frame
+//        position + velocity of the 6 joints in `joint_names`, received within max_state_age),
+//        TF base_frame -> ee_frame
 //   out: joint_trajectory (trajectory_msgs/JointTrajectory): the 10-step chunk, point i at
 //        (i + 1) * control_period, stamped with the image's stamp
 // The instruction is a 384-d embedding file (lang_path) made offline by the Python text
@@ -9,6 +10,7 @@
 #pragma once
 
 #include <array>
+#include <chrono>
 #include <memory>
 #include <string>
 #include <vector>
@@ -37,6 +39,8 @@ class ActPolicyNode : public rclcpp::Node {
   std::vector<std::string> joint_names_;
   std::string base_frame_, ee_frame_;
   double control_period_;
+  std::chrono::duration<double> max_state_age_;
+  std::chrono::steady_clock::time_point joints_rx_;
   std::array<float, act::kEmbed> lang_{};
   std::unique_ptr<act::Step> step_;
   std::vector<uint8_t> image_;

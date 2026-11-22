@@ -397,8 +397,10 @@ joint name), TF `world` -> `ee` for the end-effector position. Out:
 made once by the Python encoder. CI builds it in the `ros:humble` container and
 feeds the `cpp-ort` job's graph and frames through real topics and TF (padded image
 rows, joint order reversed): the published chunk must equal PyTorch's within 1e-4
-rad, and an image without joint state, or in `bgr8`, must publish nothing. Not
-tested: a camera driver, a trajectory controller, a real arm.
+rad, and an image without joint state, with joint state older than `max_state_age`
+(0.5 s) or not finite (NaN velocity, what joint_state_broadcaster sends for a joint
+without that interface), or in `bgr8`, must publish nothing. Not tested: a camera
+driver, a trajectory controller, a real arm.
 
 Closed loop (`cpp/closed_loop.py`): PyTorch and the exported graph each drive their
 own copy of the same seeded episode, 8 episodes per task, through `LangRunner` with

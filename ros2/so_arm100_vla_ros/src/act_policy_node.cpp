@@ -35,6 +35,8 @@ ActPolicyNode::ActPolicyNode(const rclcpp::NodeOptions& options)
   base_frame_ = declare_parameter<std::string>("base_frame", "world");
   ee_frame_ = declare_parameter<std::string>("ee_frame", "ee");
   control_period_ = declare_parameter<double>("control_period", 0.05);
+  // A joint driver that stops publishing must stop the policy, not freeze its state input.
+  max_state_age_ = std::chrono::duration<double>(declare_parameter<double>("max_state_age", 0.5));
   const auto model = declare_parameter<std::string>("model_path", "");
   const auto stats = declare_parameter<std::string>("stats_path", "");
   const auto lang = declare_parameter<std::string>("lang_path", "");
@@ -42,6 +44,7 @@ ActPolicyNode::ActPolicyNode(const rclcpp::NodeOptions& options)
     throw std::invalid_argument("joint_names needs " + std::to_string(act::kAct) + " names");
   }
   if (!(control_period_ > 0.0)) throw std::invalid_argument("control_period must be > 0");
+  if (!(max_state_age_.count() > 0.0)) throw std::invalid_argument("max_state_age must be > 0");
 
   const auto lang_v = read_floats(lang, act::kEmbed);
   std::copy(lang_v.begin(), lang_v.end(), lang_.begin());
@@ -61,11 +64,17 @@ ActPolicyNode::ActPolicyNode(const rclcpp::NodeOptions& options)
 
 void ActPolicyNode::on_joint_state(sensor_msgs::msg::JointState::ConstSharedPtr msg) {
   joints_ = std::move(msg);
+  joints_rx_ = std::chrono::steady_clock::now();
 }
 
 bool ActPolicyNode::build_state(std::array<float, act::kState>& state) {
   if (!joints_) {
     RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 2000, "no joint_states yet");
+    return false;
+  }
+  if (std::chrono::steady_clock::now() - joints_rx_ > max_state_age_) {
+    RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 2000, "joint_states older than %.2f s",
+                         max_state_age_.count());
     return false;
   }
   const auto& js = *joints_;

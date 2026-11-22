@@ -9,3 +9,4 @@ act_policy_node:
     base_frame: world
     ee_frame: ee
     control_period: 0.05
+    max_state_age: 0.5
