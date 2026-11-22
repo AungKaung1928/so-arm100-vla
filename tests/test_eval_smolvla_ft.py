@@ -70,3 +70,43 @@ def test_main_closed_loop_with_stub_policy(tmp_path, monkeypatch):
     assert r["n_forward"] == 150                 # one forward per control step of a lift episode
     assert sorted(p.seen) == ["observation.images.camera1", "observation.images.camera2",
                               "observation.images.camera3", "observation.state", "task"]
+
+
+def test_reset_clears_the_policy_between_episodes():
+    """SmolVLA keeps a queue of pending actions; an episode that starts without
+    policy.reset() would first execute the tail of the previous episode's chunk."""
+    class Counting(StubPolicy):
+        resets = 0
+
+        def reset(self):
+            Counting.resets += 1
+
+    r = E.FineTunedRunner(FakeEnv(), Counting(), lambda x: x, lambda a: a, ["pick up the red cube"])
+    r.reset()
+    r.reset()
+    assert Counting.resets == 2
+
+
+def test_main_passes_episodes_and_seeds_through(tmp_path, monkeypatch):
+    """evaluate() replaced by a recorder: every split's cells, with the requested
+    episode count and seed list, and the same numbers in the JSON."""
+    import json
+    import sys
+
+    calls = []
+
+    def fake_evaluate(factory, task, n_episodes, seeds, env_kwargs):
+        calls.append((task, n_episodes, seeds))
+        return {"success_rate": 0.0}
+
+    monkeypatch.setattr(E, "load", lambda ckpt: (StubPolicy(), lambda x: x, lambda a: a))
+    monkeypatch.setattr(E, "evaluate", fake_evaluate)
+    out = tmp_path / "ft.json"
+    monkeypatch.setattr(sys, "argv", ["eval_smolvla_ft.py", "--ckpt", "stub", "--episodes", "3",
+                                      "--seeds", "2", "--out", str(out)])
+    E.main()
+    r = json.loads(out.read_text())
+    n_cells = 2 * len(E.I.TRAIN_COMBOS) + len(E.I.HELDOUT_COMBOS)
+    assert len(calls) == n_cells == len(r["cells"])
+    assert all(n == 3 and s == (0, 1) for _, n, s in calls)
+    assert r["episodes"] == 3 and r["seeds"] == 2
