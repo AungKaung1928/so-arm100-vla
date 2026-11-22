@@ -49,7 +49,7 @@ result here.
 Why build the small version at all: the interesting property of a VLA is
 that one policy follows language across tasks and objects and generalises
 to phrasings and combinations it was not trained on. That property can be
-tested at 1M parameters on a laptop CPU with a real held-out protocol. What
+tested at 0.8M parameters on a laptop CPU with a real held-out protocol. What
 cannot be tested here is scale, and this repository does not pretend to.
 
 
@@ -382,7 +382,7 @@ weights, MinMax calibration on recorded frames disjoint from the 64 evaluated;
 | 256, all INT8 | 0.227 / 0.016 rad | 0.43 ms |
 | 256, output layer fp32 | 0.123 / 0.015 rad | 0.40 ms |
 
-fp32 took 0.45 ms in the same run, so INT8 saves at most 0.05 ms on a 1M-parameter
+fp32 took 0.45 ms in the same run, so INT8 saves at most 0.05 ms on a 0.8M-parameter
 model at batch 1 and moves single joint targets by up to 0.48 rad. The worst
 errors are output clipping: the quantised output keeps only the range it saw
 in calibration (32 frames: -2.60 to 2.65 normalised; the evaluated chunks reach
@@ -435,7 +435,7 @@ tests/           encoders, splits, windowing, shapes, ensembling, LoRA math,
 ```
 
 Model size at the default configuration: printed by `train.py`
-(`LangPolicy N params`), about 1M.
+(`LangPolicy N params`), 799,671 (0.8M) for the MiniLM and hash policies, 750,391 without FiLM.
 
 
 ## Reproducing

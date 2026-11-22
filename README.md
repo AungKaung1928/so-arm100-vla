@@ -30,10 +30,10 @@ flowchart LR
     E --> T
     C --> T
     P --> T
-    T["3 tokens → 128-wide transformer<br/>about 1M params, L1 loss<br/>162 training episodes"] --> A["chunk of 10 joint targets<br/>ChunkEnsembler → arm at 20 Hz"]
+    T["3 tokens → 128-wide transformer<br/>0.8M params, L1 loss<br/>162 training episodes"] --> A["chunk of 10 joint targets<br/>ChunkEnsembler → arm at 20 Hz"]
 ```
 
-Success rates are low: about 1M parameters trained on 162 episodes. That is the baseline the SmolVLA fine-tune ([`kaggle/RUNBOOK.md`](kaggle/RUNBOOK.md), prepared, not run yet) has to beat.
+Success rates are low: 0.8M parameters trained on 162 episodes. That is the baseline the SmolVLA fine-tune ([`kaggle/RUNBOOK.md`](kaggle/RUNBOOK.md), prepared, not run yet) has to beat.
 
 ## Quick start
 

@@ -178,3 +178,9 @@ def test_minilm_cosines():
     hoist = dict(c["paraphrases"])["hoist the green block"]
     take = dict(c["paraphrases"])["take the green cube and hold it up"]
     assert f'only {hoist:.2f} from its own paraphrase "hoist the green block" and {take:.2f} from' in README
+
+
+def test_policy_size():
+    n = run("policy_minilm_s0")["params"]
+    assert f"{n / 1e6:.1f}M param" in README and f"{n:,}" in README
+    assert "about 1M" not in README and " 1M-param" not in README
