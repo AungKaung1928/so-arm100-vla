@@ -109,12 +109,16 @@ def image_to_tensor(img_uint8_hwc):
 
 
 class ChunkEnsembler:
-    """ACT-style temporal ensembling.
+    """Temporal ensembling over overlapping chunks: ACT's scheme with the weight order reversed.
 
     Every step the policy predicts k actions for t..t+k-1. The action executed
-    at t is the exponentially weighted average of all still-live predictions
-    for t, older predictions weighted by exp(-m * age). m=0.01 is ACT's value;
-    m -> inf recovers "use only the newest chunk".
+    at t is the weighted average of all still-live predictions for t, weight
+    exp(-m * age), so the newest chunk counts most. ACT (Zhao et al. 2023, arXiv
+    2304.13705) uses exp(-m * i) with m=0.01 too, but i counts from the oldest
+    prediction (w_0 = oldest), so ACT weights the oldest most. At m=0.01 and
+    k=10 the weights here span 1.0 to 0.914, so the order moves the average
+    little; every result in runs/ was measured with this order.
+    m -> inf: newest chunk only; m = 0: plain average.
     """
 
     def __init__(self, k, act_dim, m=0.01):
