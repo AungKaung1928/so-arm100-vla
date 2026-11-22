@@ -7,6 +7,7 @@
 #include <cmath>
 #include <cstdio>
 #include <fstream>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -50,19 +51,28 @@ class NodeTest : public ::testing::Test {
     tf_ = std::make_shared<tf2_ros::StaticTransformBroadcaster>(io_);
     sub_ = io_->create_subscription<trajectory_msgs::msg::JointTrajectory>(
       "joint_trajectory", 10, [this](trajectory_msgs::msg::JointTrajectory::ConstSharedPtr m) { got_.push_back(*m); });
-    exec_.add_node(node_);
-    exec_.add_node(io_);
+    // created after rclcpp::init: an executor needs the default context
+    exec_ = std::make_unique<rclcpp::executors::SingleThreadedExecutor>();
+    exec_->add_node(node_);
+    exec_->add_node(io_);
     imgs_ = read_all<uint8_t>(kData + "/images.u8");
     states_ = read_all<float>(kData + "/states.f32");
     ref_ = read_all<float>(kData + "/ref.f32");
   }
   void TearDown() override {
+    exec_.reset();
+    sub_.reset();
+    tf_.reset();
+    js_pub_.reset();
+    img_pub_.reset();
+    io_.reset();
+    node_.reset();
     if (rclcpp::ok()) rclcpp::shutdown();
   }
 
   void spin_for(std::chrono::milliseconds d) {
     const auto end = std::chrono::steady_clock::now() + d;
-    while (std::chrono::steady_clock::now() < end) exec_.spin_some(10ms);
+    while (std::chrono::steady_clock::now() < end) exec_->spin_some(10ms);
   }
 
   // Joint states + ee TF of sample i (joint names shuffled: the node must map by name).
@@ -118,7 +128,7 @@ class NodeTest : public ::testing::Test {
   rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr js_pub_;
   std::shared_ptr<tf2_ros::StaticTransformBroadcaster> tf_;
   rclcpp::Subscription<trajectory_msgs::msg::JointTrajectory>::SharedPtr sub_;
-  rclcpp::executors::SingleThreadedExecutor exec_;
+  std::unique_ptr<rclcpp::executors::SingleThreadedExecutor> exec_;
   std::vector<trajectory_msgs::msg::JointTrajectory> got_;
   std::vector<uint8_t> imgs_;
   std::vector<float> states_, ref_;
