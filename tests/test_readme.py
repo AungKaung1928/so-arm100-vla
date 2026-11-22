@@ -149,3 +149,10 @@ def test_closed_loop_paragraph():
     first = [e["first_step_over_1e-3"] for e in eps if e["first_step_over_1e-3"] is not None]
     assert f"in {len(first)} of {len(eps)} episodes" in README
     assert f"after {min(first)}-{max(first)} steps, by up to {maxd:.2f} rad" in README
+
+
+def test_demo_caption_is_the_closed_loop_json():
+    cl = json.load(open(os.path.join(ROOT, "runs", "act_closed_loop.json")))
+    assert cl["ckpt"] == "runs/policy_hash_s0.pt" and cl["task"] == "reach:red"
+    assert f"It solved {cl['success_torch']} of {cl['episodes']} such episodes" in README
+    assert os.path.getsize(os.path.join(ROOT, "docs", "media", "demo.gif")) < 3_000_000

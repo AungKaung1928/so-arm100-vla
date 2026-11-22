@@ -2,6 +2,10 @@
 
 Language-conditioned multitask policy for simulated SO-ARM100 tabletop tasks, trained from scratch on scripted demonstrations and tested on instructions and (task, colour) pairs it never saw. The policy step runs in 0.35-0.44 ms p50 through the ONNX Runtime C++ API (one thread), and a ROS 2 node wraps it (tested in CI).
 
+<img src="docs/media/demo.gif" width="640" alt="Two reach:red episodes of the hash-encoder policy, front camera: left reaches the red cube at step 54, right never does in 100 steps">
+
+The hash-encoder policy on `reach:red`, real time: one episode it solves, one it does not. It solved 4 of 8 such episodes (`runs/act_closed_loop.json`); rebuild with `scripts/make_demo.py`.
+
 Success rate per split, nominal physics, 20 episodes × 5 evaluation seeds per (task, colour) cell, mean ± sd over seeds, one training seed per row. Measured 2026-09-24.
 
 | policy | `seen` (training templates, training pairs) | `paraphrase` (held-out templates) | `combo` (held-out pairs) |
