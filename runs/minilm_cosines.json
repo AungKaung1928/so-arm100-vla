@@ -1,0 +1,29 @@
+{
+  "anchor": "lift the green cube",
+  "other_task": [
+    "push the red cube to the target",
+    0.6296234179068866
+  ],
+  "other_colour": [
+    "lift the blue cube",
+    0.8157706107156488
+  ],
+  "extra_paraphrase": [
+    "raise the green block into the air",
+    0.5933729163402348
+  ],
+  "paraphrases": [
+    [
+      "hoist the green block",
+      0.3836098191404369
+    ],
+    [
+      "take the green cube and hold it up",
+      0.8373279289756648
+    ],
+    [
+      "get the green one off the table",
+      0.5456283408512801
+    ]
+  ]
+}

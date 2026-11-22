@@ -168,3 +168,13 @@ def test_smolvla_and_l1_rows():
     assert f"{ratio:.0f}x the 50 ms control period" in README and "64x" not in README
     last = run("policy_minilm_s0")["trace"][-1]
     assert f"| {last['train_l1']:.3f} / {last['val_l1']:.3f} |" in README
+
+
+def test_minilm_cosines():
+    c = run("minilm_cosines")
+    para = [v for _, v in c["paraphrases"]]
+    assert f"| {min(para):.2f}–{max(para):.2f} / **{c['other_task'][1]:.2f}** / {c['other_colour'][1]:.2f} |" in README
+    assert f"is {c['extra_paraphrase'][1]:.2f} from its paraphrase\n\"{c['extra_paraphrase'][0].rsplit(' ', 2)[0]}" in README
+    hoist = dict(c["paraphrases"])["hoist the green block"]
+    take = dict(c["paraphrases"])["take the green cube and hold it up"]
+    assert f'only {hoist:.2f} from its own paraphrase "hoist the green block" and {take:.2f} from' in README
