@@ -33,7 +33,7 @@ table, 20 successful expert episodes each (about 9 x 20 x 150 frames at
 
     python record_data.py --root data/multitask --episodes 20
 
-Train, both encoders, 3 seeds each (report all three):
+Train (the tracked runs/ rows are seed 0 only; the protocol asked for 3, add --seed 1 and --seed 2 for the spread):
 
     nice -n 10 python train.py --root data/multitask --encoder minilm --epochs 30 --seed 0
     nice -n 10 python train.py --root data/multitask --encoder hash   --epochs 30 --seed 0

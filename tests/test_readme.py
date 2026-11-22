@@ -197,3 +197,20 @@ def test_diagram_matches_policy_config():
     for want in (f"{cfg['n_kp']} keypoints", f"{cfg['d']}-wide transformer", f"{cfg['train_episodes']} training episodes",
                  f"chunk of {cfg['k']} joint targets"):
         assert want in README, want
+
+
+@pytest.mark.parametrize("tag", ("minilm", "hash", "minilm_nofilm"))
+def test_verify_sh_train_command_reproduces_tracked_cfg(tag):
+    # train.py defaults (lr, batch, k, d, layers) stay implicit in the command, so they must equal the run's cfg
+    import shlex
+    cfg = run(f"policy_{tag}_s0")["cfg"]
+    lines = open(os.path.join(ROOT, "verify.sh"), encoding="utf-8").read().splitlines()
+    want = ["--encoder", cfg["encoder"], "--epochs", str(cfg["epochs"]), "--seed", str(cfg["seed"])]
+    cmds = [shlex.split(l)[3:] for l in lines if l.strip().startswith("nice -n 10 python train.py")]
+    hit = [c for c in cmds if all(c[c.index(k) + 1] == v for k, v in zip(want[::2], want[1::2]) if k in c)
+           and all(k in c for k in want[::2]) and ("--no-film" in c) == (not cfg["film"])]
+    assert len(hit) == 1, (want, cmds)
+    src = open(os.path.join(ROOT, "train.py"), encoding="utf-8").read()
+    for flag, key in (("--lr", "lr"), ("--batch-size", "batch_size"), ("--k", "k"), ("--d", "d"), ("--layers", "layers")):
+        m = re.search(rf'add_argument\("{flag}", type=(\w+), default=([^)]+)\)', src)
+        assert m and {"int": int, "float": float}[m.group(1)](m.group(2)) == cfg[key], (flag, m and m.group(2), cfg[key])
