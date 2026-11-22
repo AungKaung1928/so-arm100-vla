@@ -60,8 +60,14 @@ int main(int argc, char** argv) {
   double max_diff = 0.0;
   for (size_t i = 0; i < n; ++i) {
     step.run(&imgs[i * kH * kW * 3], &states[i * kState], &langs[i * kEmbed], act.data());
-    for (int j = 0; j < kK * kAct; ++j)
-      max_diff = std::max(max_diff, static_cast<double>(std::fabs(act[j] - ref[i * kK * kAct + j])));
+    for (int j = 0; j < kK * kAct; ++j) {
+      const double d = std::fabs(act[j] - ref[i * kK * kAct + j]);
+      if (!std::isfinite(d)) {  // std::max would drop a NaN and report parity
+        std::fprintf(stderr, "non-finite action or reference at sample %zu, index %d\n", i, j);
+        return 1;
+      }
+      max_diff = std::max(max_diff, d);
+    }
   }
 
   std::vector<double> ms(n_time);
