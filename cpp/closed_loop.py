@@ -87,7 +87,8 @@ def main():
            "success_torch": sum(e["success_torch"] for e in eps),
            "success_onnx": sum(e["success_onnx"] for e in eps),
            "same_outcome": sum(e["success_torch"] == e["success_onnx"] for e in eps),
-           "max_action_diff": max(e["max_action_diff"] for e in eps), "per_episode": eps}
+           "max_action_diff": float(np.max([e["max_action_diff"] for e in eps])),  # np.max keeps a NaN
+           "per_episode": eps}
     print(json.dumps({k: v for k, v in res.items() if k != "per_episode"}, indent=2))
     if a.out:
         os.makedirs(os.path.dirname(os.path.abspath(a.out)), exist_ok=True)
