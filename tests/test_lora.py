@@ -11,7 +11,20 @@ def test_lora_equals_base_at_init():
     ref = base(x).detach().clone()
     lora = LoRALinear(base, r=4, alpha=8.0)
     assert torch.allclose(lora(x), ref)
-    assert not lora.base.weight.requires_grad and lora.A.requires_grad and lora.B.requires_grad
+    assert not lora.base.weight.requires_grad and not lora.base.bias.requires_grad and lora.A.requires_grad and lora.B.requires_grad
+
+
+def test_update_is_scaled_by_alpha_over_r():
+    # y = W x + b + (alpha / r) B A x, checked against the formula written out; alpha 8, r 4 -> 2
+    torch.manual_seed(2)
+    base = nn.Linear(12, 7)
+    lora = LoRALinear(base, r=4, alpha=8.0)
+    with torch.no_grad():
+        lora.B.normal_()
+    x = torch.randn(3, 12)
+    want = x @ base.weight.t() + base.bias + 2.0 * x @ (lora.B @ lora.A).t()
+    assert torch.allclose(lora(x), want, atol=1e-5)
+    assert torch.allclose(lora.delta(), 2.0 * lora.B @ lora.A)
 
 
 def test_merge_unmerge_exact():
@@ -25,7 +38,10 @@ def test_merge_unmerge_exact():
     lora.merge()
     assert torch.allclose(lora(x), y, atol=1e-6)
     assert not torch.allclose(lora.base.weight, w0)
+    lora.merge()                               # second merge is a no-op
+    assert torch.allclose(lora(x), y, atol=1e-6)
     lora.unmerge()
+    lora.unmerge()                             # second unmerge is a no-op
     assert torch.allclose(lora.base.weight, w0, atol=1e-6)
     assert torch.allclose(lora(x), y, atol=1e-6)
 
@@ -46,3 +62,7 @@ def test_attach_wraps_by_pattern_and_counts_trainables():
     assert total_parameters(m) == 6 * (16 * 16 + 16) + trainable_parameters(m)
     y = m(torch.randn(2, 16))
     assert y.shape == (2, 16)
+    # the pattern sees the qualified name, so one block can be picked
+    m2 = nn.Sequential(Blk(), Blk())
+    assert attach_lora(m2, r"^0\.q_proj$") == ["0.q_proj"]
+    assert isinstance(m2[0].q_proj, LoRALinear) and isinstance(m2[1].q_proj, nn.Linear)
