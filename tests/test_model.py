@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 
-from so_arm100_vla.model import LangPolicy, ChunkEnsembler, image_to_tensor
+from so_arm100_vla.model import LangPolicy, ChunkEnsembler, SpatialSoftArgmax, image_to_tensor
 
 
 def test_forward_shapes_with_and_without_film():
@@ -15,6 +15,20 @@ def test_forward_shapes_with_and_without_film():
     a = LangPolicy(k=10, d=64, n_kp=8, layers=1, heads=4, film=True, feat=16).n_params()
     b = LangPolicy(k=10, d=64, n_kp=8, layers=1, heads=4, film=False, feat=16).n_params()
     assert a - b == 384 * 32 + 32
+
+
+
+def test_soft_argmax_pixel_convention():
+    # Saved checkpoints learned their heads on this convention: u = column, v = row, -1 at
+    # index 0 and +1 at the last index. A flip or swap still trains, but breaks every checkpoint.
+    h, w = 5, 7
+    x = torch.full((1, 2, h, w), -1e4)
+    x[0, 0, 1, 6] = 0.0          # row 1, last column
+    x[0, 1, 4, 0] = 0.0          # last row, column 0
+    out = SpatialSoftArgmax()(x)[0]
+    torch.testing.assert_close(out, torch.tensor([1.0, -1.0, -0.5, 1.0]))   # (u0, u1, v0, v1)
+    # uniform map -> centre
+    torch.testing.assert_close(SpatialSoftArgmax()(torch.zeros(1, 1, h, w)), torch.zeros(1, 2))
 
 
 def test_language_changes_the_output():
